@@ -5,3 +5,9 @@ int main (void) {
 
     return 0;
 }
+
+int subfunction(void) {
+    printf ("test\n");
+
+    return 0;
+}
