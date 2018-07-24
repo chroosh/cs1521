@@ -8,6 +8,12 @@ int main (void) {
 
 int subfunction(void) {
     printf ("test\n");
+    
+    int i = 0;
+    while (i < 10) {
+        printf ("%d\n", i);
+        i++;
+    }
 
     return 0;
 }
