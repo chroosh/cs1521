@@ -155,6 +155,5 @@ void showBigNum(BigNum n)
 		}
 	}
 	
-	printf ("\n");
   return;
 }
