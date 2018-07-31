@@ -39,7 +39,7 @@ void addBigNums(BigNum n, BigNum m, BigNum *res)
 	int k = 0;
 	
 	int carry_over = 0;
-	
+
 	while (i < n.nbytes || j < m.nbytes) {
 		// Adding two numbers together
 		int temp_n = n.bytes[i] - 48;
@@ -95,7 +95,7 @@ int scanBigNum(char *s, BigNum *n)
 	
 	// Scans through s to find start and end positions for number
 	while (s[i] != '\0') {
-		// printf ("%c\n", s[i]);
+		// printf ("%d\n", s[i]);
 
 		// Start position
 		if (start_found == FALSE && s[i] >= '0' && s[i] <= '9') {
@@ -103,19 +103,21 @@ int scanBigNum(char *s, BigNum *n)
 			start_found = TRUE;
 			end_found = FALSE;
 		}
-	
-		if (end_found == FALSE) {
-			// End position if string ends in non-digits
-			if (s[i] < '0' || s[i] > '9') {
-				end = i - 1;
-				end_found = TRUE;
-			}
-			// End position if string ends in digits	
-			if (s[i+1] == '\0') {
-				end = i;
-				end_found = TRUE;
-			}
+		
+		// End position if string ends in non-digits
+		if (end_found == FALSE && (s[i] < '0' || s[i] > '9')) {
+			// printf ("End found non-digit = %c\n", s[i-1]);
+			end = i - 1;
+			end_found = TRUE;
 		}
+
+		// End position if string ends in digits
+		if (end_found == FALSE && s[i+1] == '\0') {
+			// printf ("End found digit = %d\n", s[i]);
+			end = i;
+			end_found = TRUE;
+		}
+
 		i++;
 	}
 
@@ -154,6 +156,9 @@ void showBigNum(BigNum n)
 			printf ("%c", n.bytes[i]);
 		}
 	}
+	
+	// DISABLE
+	// printf ("\n");
 	
   return;
 }

@@ -26,11 +26,15 @@ int main(int argc, char **argv)
   if (!scanBigNum(argv[1], &num1)) {
      printf("First number invalid\n");
      return 1;
+	} else {
+		//showBigNum(num1);
 	}
 
   if (!scanBigNum(argv[2], &num2)) {
      printf("Second number invalid\n");
      return 1;
+	} else {
+		//showBigNum(num2);
 	}
 
 	// Add num1+num2, store result in sum
