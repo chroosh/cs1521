@@ -146,7 +146,7 @@ void showBigNum(BigNum n)
 	int flag = FALSE;
 	
 	for (i = n.nbytes-1; i >= 0; i--) {
-		if (n.bytes[i] > 0 && flag == FALSE) {
+		if (n.bytes[i] > '0' && flag == FALSE) {
 			flag = TRUE;
 		}
 
