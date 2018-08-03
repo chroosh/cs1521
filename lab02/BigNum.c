@@ -23,7 +23,8 @@ void initBigNum(BigNum *n, int Nbytes)
 	n->bytes = calloc(Nbytes, sizeof(Byte));
 	
 	// All zer0
-	for (int i = 0; i < Nbytes; i++) {
+	int i;
+	for (i = 0; i < Nbytes; i++) {
 		n->bytes[i] = '0';
 	}
 	assert(n->bytes != NULL);
@@ -44,15 +45,17 @@ void addBigNums(BigNum n, BigNum m, BigNum *res)
 	}
 	
 	// Resets all non digit values in n and m to 0
-	for (int z = 0; z < max ; z++) {
+	int z;
+	for (z = 0; z < max ; z++) {
 		if (n.bytes[z] < '0' || n.bytes[z] > '9')
 			n.bytes[z] = '0';
 		if (m.bytes[z] < '0' || m.bytes[z] > '9')
 			m.bytes[z] = '0';
 	}
 	
+	int i;
 	int carry_over = 0;
-	for (int i = 0; i < n.nbytes || i < m.nbytes; i++) {
+	for (i = 0; i < n.nbytes || i < m.nbytes; i++) {
 		// Adding two numbers together
 		int total = (n.bytes[i] - 48) + (m.bytes[i] - 48) + carry_over;
 	
@@ -131,10 +134,11 @@ int scanBigNum(char *s, BigNum *n)
 		n->nbytes = string_len;
 	}
 	
+	int j = 0;
 	int k = 0;
 	// Starting from back of s and mapping starting from n->bytes[0]
 	// End is the first non-number char
-	for (int j = end; j >= start; j--) {
+	for (j = end; j >= start; j--) {
 		n->bytes[k] = s[j];	
 		k++;
 	}
@@ -146,8 +150,9 @@ int scanBigNum(char *s, BigNum *n)
 void showBigNum(BigNum n)
 {
 	// Starts from nbytes - 1 and only prints out after non-zero
+	int i;
 	int flag = FALSE;
-	for (int i = n.nbytes-1; i >= 0; i--) {
+	for (i = n.nbytes-1; i >= 0; i--) {
 		if (n.bytes[i] > '0' && flag == FALSE) {
 			flag = TRUE;
 		}
