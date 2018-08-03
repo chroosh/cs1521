@@ -18,9 +18,9 @@ int main(int argc, char **argv)
   }
 
   // Initialise BigNum objects
-  initBigNum(&num1, 40);
-  initBigNum(&num2, 40);
-  initBigNum(&sum,  40);
+  initBigNum(&num1, 5);
+  initBigNum(&num2, 5);
+  initBigNum(&sum,  5);
 
   // Extract values from cmd line args
   if (!scanBigNum(argv[1], &num1)) {
