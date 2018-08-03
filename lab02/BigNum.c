@@ -37,16 +37,18 @@ void addBigNums(BigNum n, BigNum m, BigNum *res)
 	int max = n.nbytes;
 	if (m.nbytes > n.nbytes)
 		max = m.nbytes;
+	
+	max++;
 
 	// Reallocates res to max + 1
 	if (max > res->nbytes) {
-		res->bytes = realloc(res->bytes, max + 1);
-		res->nbytes = max + 1;
+		res->bytes = realloc(res->bytes, max);
+		res->nbytes = max;
 	}
 	
 	// Resets all non digit values in n and m to 0
 	int z;
-	for (z = 0; z < max ; z++) {
+	for (z = 0; z < max; z++) {
 		if (n.bytes[z] < '0' || n.bytes[z] > '9')
 			n.bytes[z] = '0';
 		if (m.bytes[z] < '0' || m.bytes[z] > '9')
@@ -55,14 +57,17 @@ void addBigNums(BigNum n, BigNum m, BigNum *res)
 	
 	int i;
 	int carry_over = 0;
-	for (i = 0; i < n.nbytes || i < m.nbytes; i++) {
+	for (i = 0; i < max; i++) {
 		// Adding two numbers together
+		
 		int total = (n.bytes[i] - 48) + (m.bytes[i] - 48) + carry_over;
 	
 		// Debugging
+		// int temp_n = n.bytes[i] - '0';
+		// int temp_m = m.bytes[i] - '0';
 		// if (temp_n != 0 && temp_m != 0) {
 		//   printf ("n.bytes[%d] = %d\n", i, temp_n);
-		//   printf ("m.bytes[%d] = %d\n", j, temp_m);
+		//   printf ("m.bytes[%d] = %d\n", i, temp_m);
 		//   printf ("carry over = %d\n", carry_over);
 		//   printf ("total = %d\n", total);
 		// }
@@ -81,7 +86,7 @@ void addBigNums(BigNum n, BigNum m, BigNum *res)
 		
 		// Debugging
 		// if (temp_n != 0 && temp_m != 0) {
-		//   printf ("res->bytes[%d] = %d\n", k, res->bytes[k]);
+		//   printf ("res->bytes[%d] = %d\n", i, res->bytes[i]);
 		//   printf ("---\n");
 		// }
 	}
