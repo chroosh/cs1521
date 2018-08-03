@@ -37,10 +37,11 @@ void addBigNums(BigNum n, BigNum m, BigNum *res)
 	int max = n.nbytes;
 	if (m.nbytes > n.nbytes)
 		max = m.nbytes;
-	
+
+	// All operations with max should now be max + 1	
 	max++;
 
-	// Reallocates res to max + 1
+	// Reallocates res to new max
 	if (max > res->nbytes) {
 		res->bytes = realloc(res->bytes, max);
 		res->nbytes = max;
@@ -59,7 +60,6 @@ void addBigNums(BigNum n, BigNum m, BigNum *res)
 	int carry_over = 0;
 	for (i = 0; i < max; i++) {
 		// Adding two numbers together
-		
 		int total = (n.bytes[i] - 48) + (m.bytes[i] - 48) + carry_over;
 	
 		// Debugging
@@ -90,6 +90,7 @@ void addBigNums(BigNum n, BigNum m, BigNum *res)
 		//   printf ("---\n");
 		// }
 	}
+	
   return;
 }
 
