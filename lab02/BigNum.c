@@ -20,7 +20,7 @@ void initBigNum(BigNum *n, int Nbytes)
 {
   // Init
 	n->nbytes = Nbytes;
-	n->bytes = calloc(Nbytes, sizeof(Byte));
+	n->bytes = malloc(Nbytes);
 	
 	// All zer0
 	int i;
