@@ -14,7 +14,8 @@ struct _float {
    // define bit_fields for sign, exp and frac
    // obviously they need to be larger than 1-bit each
    // and may need to be defined in a different order
-   unsigned int sign:1, exp:1, frac:1;
+   // unsigned int sign:1, exp:1, frac:1;
+	 unsigned int frac:23, exp:8, sign:1;
 };
 typedef struct _float Float32;
 
@@ -57,16 +58,27 @@ int main(int argc, char **argv)
 Union32 getBits(char *sign, char *exp, char *frac)
 {
    Union32 new;
+	 int i = 0;
 
    // this line is just to keep gcc happy
    // delete it when you have implemented the function
    new.bits.sign = new.bits.exp = new.bits.frac = 0;
 
    // convert char *sign into a single bit in new.bits
+	 new.bits.sign = sign[0] - '0';
 
-   // convert char *exp into an 8-bit value in new.bits
+	 for (i = 0; i < 8; i++) {
+			if (exp[i] == '1') {
+			 new.bits.exp = new.bits.exp | (1 << (7 - i));
+			}
+	 }
 
    // convert char *frac into a 23-bit value in new.bits
+	 for (i = 0; i < 23; i++) {
+		 if (frac[i] == '1') {
+			 new.bits.frac = new.bits.frac | (1 << (22 - i));
+		 }
+	 }
 
    return new;
 }
@@ -79,7 +91,22 @@ char *showBits(Word val, char *buf)
 {
    // this line is just to keep gcc happy
    // delete it when you have implemented the function
-   buf[0] = '\0';
+
+	 // very iffy on how this works
+	 int i = 0;
+	 unsigned int mask = 1;
+	 
+	 for (i = 33; i >= 0; i--) {
+		 if (i == 1 | i == 10) {
+			 buf[i] = ' ';
+			 i--;
+		 }
+		 buf[i] = ((val & mask) > 0) + '0';
+		 mask = mask << 1; 
+	 }
+
+   buf[34] = '\0';
+
    return buf;
 }
 

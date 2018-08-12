@@ -13,9 +13,44 @@ struct _bit_fields {
 
 int main(void)
 {
-   struct _bit_fields x;
+  struct _bit_fields x = {10, 50, 100};
+	unsigned int *ptrX = (unsigned int *) &x;
 
-   printf("%u\n",sizeof(x));
+  // printf("%lu\n",sizeof(x));
+	
+	// unsigned int val = 10;
+	// unsigned int *valPtr = &val;
+	unsigned int mask = 1;
+	unsigned int countA = 0, countB = 0, countC = 0;
+	
 
-   return 0;
+	int i = 0;
+  while (i < 32) {
+		printf ("%d: ", i);
+		if ((*ptrX & mask) > 0) {
+			// bit at i is equal to 1;
+			printf ("1\n");
+
+			if (i < 4) {
+				countA += (*ptrX & mask);
+			} else if (i < 12) {
+				countB += ((*ptrX & mask) >> 4);
+			} else {
+				countC += ((*ptrX & mask) >> 12);
+			}
+		} else {
+			// bit at i is equal to 0;
+			printf ("0\n");
+		}
+        
+   	i++;
+  	mask = mask << 1;
+  }
+
+	printf ("count a = %d\n", countA);
+	printf ("count b = %d\n", countB);
+	printf ("count c = %d\n", countC);
+
+
+	return 0;
 }
