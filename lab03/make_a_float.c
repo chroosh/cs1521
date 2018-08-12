@@ -97,7 +97,7 @@ char *showBits(Word val, char *buf)
 	 unsigned int mask = 1;
 	 
 	 for (i = 33; i >= 0; i--) {
-		 if (i == 1 | i == 10) {
+		 if ((i == 1) | (i == 10)) {
 			 buf[i] = ' ';
 			 i--;
 		 }
