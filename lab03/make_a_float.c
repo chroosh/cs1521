@@ -58,7 +58,7 @@ int main(int argc, char **argv)
 Union32 getBits(char *sign, char *exp, char *frac)
 {
    Union32 new;
-	 int i = 0;
+     int i = 0;
 
    // this line is just to keep gcc happy
    // delete it when you have implemented the function
@@ -97,7 +97,7 @@ char *showBits(Word val, char *buf)
 	 unsigned int mask = 1;
 	 
 	 for (i = 33; i >= 0; i--) {
-		 if ((i == 1) | (i == 10)) {
+		 if ((i == 1) || (i == 10)) {
 			 buf[i] = ' ';
 			 i--;
 		 }
