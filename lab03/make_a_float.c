@@ -22,7 +22,7 @@ typedef struct _float Float32;
 union _bits32 {
    float   fval;  // interpret the bits as a float
    Word    xval;  // interpret as a single 32-bit word
-   Float32 bits;  // manipulate individual bits
+   Float32 bits;  // manipulate :qqindividual bits
 };
 typedef union _bits32 Union32;
 
@@ -58,7 +58,7 @@ int main(int argc, char **argv)
 Union32 getBits(char *sign, char *exp, char *frac)
 {
    Union32 new;
-     int i = 0;
+   int i = 0;
 
    // this line is just to keep gcc happy
    // delete it when you have implemented the function
@@ -68,9 +68,9 @@ Union32 getBits(char *sign, char *exp, char *frac)
 	 new.bits.sign = sign[0] - '0';
 
 	 for (i = 0; i < 8; i++) {
-			if (exp[i] == '1') {
+		 if (exp[i] == '1') {
 			 new.bits.exp = new.bits.exp | (1 << (7 - i));
-			}
+		 }
 	 }
 
    // convert char *frac into a 23-bit value in new.bits
