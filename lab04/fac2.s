@@ -32,10 +32,14 @@ main:
 
    li    $v0, 5
    syscall                  # scanf("%d", into $v0)
-   
+
 # ... TODO: add your code here for  tmp = fac(n); ...
 # ... place the parameter in $a0 and get the result from $v0 ...
-   
+
+	 move  $a0, $v0 					# moving scanned value into arg1
+	 jal fac 									# calling fac
+	 move  $t0, $v0 					# moving returned fac to $t0
+	 
    la    $a0, msg2
    li    $v0, 4
    syscall                  # printf("n! = ");
@@ -52,7 +56,7 @@ main:
    lw    $s0, -8($fp)       # restore $s0 value
    lw    $ra, -4($fp)       # restore $ra for return
    la    $sp, 4($fp)        # restore $sp (remove stack frame)
-   lw    $fp, ($fp)          # restore $fp (remove stack frame)
+   lw    $fp, ($fp)         # restore $fp (remove stack frame)
 
    li    $v0, 0
    jr    $ra                # return 0
@@ -69,9 +73,28 @@ fac:
    addi  $sp, $sp, -16      # reset $sp to last pushed item
 
    # code for fac()
+	 
+	 # ... TODO: place your code for the body of fac() here ...
+	 # ... use the value of n in $a0, place n! in $v0 ...
 
-# ... TODO: place your code for the body of fac() here ...
-# ... use the value of n in $a0, place n! in $v0 ...
+	 # $a0 = n
+	 # $s0 = i
+	 # $s1 = prod (fac) => returned value
+
+	 li 	 $s0, 1
+	 li 	 $s1, 1
+
+	 while:
+	  	# if i > n, end_while
+			bgt 	$s0, $a0, end_while
+			mul 	$s1, $s1, $s0
+			addi 	$s0, $s0, 1
+			j while
+
+	 end_while:
+
+	 # placing $s1 into $v0
+	 move  $v0, $s1
 
    # clean up stack frame
    lw    $s1, -12($fp)      # restore $s1 value

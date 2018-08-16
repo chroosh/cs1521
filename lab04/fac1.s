@@ -36,7 +36,22 @@ main:
    syscall                  # scanf("%d", into $v0)
 
 # ... TODO: your code for the body of main() goes here ..
-   
+
+	 move  $s0, $v0
+	 li  	 $s1, 1
+	 li 	 $s2, 1
+
+while:
+	 # if i ($s1) > n ($s0)  ==> break
+	 bgt 	 $s1, $s0, end_while
+	 mul 	 $s2, $s2, $s1
+	 addi  $s1, $s1, 1
+	 j while
+
+end_while:
+
+# ... output
+
    la    $a0, msg2
    li    $v0, 4
    syscall                  # printf("n! = ");
@@ -49,7 +64,7 @@ main:
    li    $v0, 4
    syscall                  # printf("\n");
 
-   # clean up stack frame
+# clean up stack frame
    lw    $s2, -16($fp)      # restore $s2 value
    lw    $s1, -12($fp)      # restore $s1 value
    lw    $s0, -8($fp)       # restore $s0 value

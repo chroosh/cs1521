@@ -12,6 +12,7 @@ int main(void)
     scanf("%d", &n);
     fac = 1;
     for (i = 1; i <= n; i++) fac *= i;
+
     printf("n! = %d\n", fac);
     return 0;
 }
