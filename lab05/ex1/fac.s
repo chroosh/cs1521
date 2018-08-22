@@ -5,6 +5,8 @@
 ### Global data
 
    .data
+val: 
+	 .word 1
 msg1:
    .asciiz "n  = "
 msg2:
@@ -64,12 +66,38 @@ main:
 
 fac:
    # set up stack frame
-# ... TODO ...
-
+	 # ... TODO ...
+	 sw 	 $fp, -4($sp)	
+	 la 	 $fp, -4($sp)
+	 sw 	 $ra, -4($fp)
+	 sw 	 $s0, -8($fp)
+	 addi  $sp, $sp, -12
+	
    # code for recursive fac()
-# ... TODO ...
+	 # ... TODO ...
+
+	 # base case (if n <= 1) 
+	 li 	 $v0, 1
+	 beq 	 $a0, $v0, end_fac
+
+   # else, store current $a0 into $s0
+	 # 	   , subtract 1 from $a0
+	 # 		 , call jal fac with new $a0
+	 move  $s0, $a0
+	 sub 	 $a0, $a0, 1
+	 jal fac
+
+	 # multiply return value from nested jal fac with $s0
+	 mul   $v0, $s0, $v0
+
+	 # once this finishes, it proceeds to end_fac
 
    # clean up stack frame
-# ... TODO ...   
+	 # ... TODO ...   
+	 end_fac:
+	 		lw 		$s0, -8($fp)
+			lw 		$ra, -4($fp)
+			la 		$sp, 4($fp)
+			lw 		$fp, ($fp)
 
-   jr    $ra                # return tmp;
+			jr    $ra                # return tmp;
