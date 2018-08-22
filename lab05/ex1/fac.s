@@ -78,7 +78,7 @@ fac:
 
 	 # base case (if n <= 1) 
 	 li 	 $v0, 1
-	 beq 	 $a0, $v0, end_fac
+	 ble 	 $a0, $v0, end_fac
 
    # else, store current $a0 into $s0
 	 # 	   , subtract 1 from $a0
