@@ -444,24 +444,60 @@ delay__post:
 ########################################################################
 # .TEXT <isUpper>
 	.text
-isUpper:
+isUpper: 		# behaves similarly to isLower
 
 # Frame:	$fp, $ra, ...
 # Uses:		$a0, ...
 # Clobbers:	$v0, ...
 
-# Locals:
-#	- ...
+# Locals: 	# same as isLower
+#	- `ch' in $a0
+# - ... $v0 used as temporary register
 
 # Structure:
 #	isUpper
 #	-> [prologue]
+# [ch cond]
+# 	| isUpper_ch_ge_A
+# 	| isUpper_ch_le_Z
+# 	| isUpper_ch_lt_A
+# 	| isUpper_ch_gt_Z
+# -> isUpper_ch_phi
 #	-> [epilogue]
 
 # Code:
 	# set up stack frame
-	# ... TODO ...
+	sw	$fp, -4($sp)
+	la	$fp, -4($sp)
+	sw	$ra, -4($fp)
+	la	$sp, -8($fp)
+
+	# if (ch >= 'A')
+	li  $v0, 'A'
+	blt $a0, $v0, isUpper_ch_lt_A
+	nop
+isUpper_ch_ge_A:
+	# if (ch <= 'Z')
+	li 	$v0 , 'Z'
+	bgt $a0, $v0, isUpper_ch_gt_Z
+	nop
+isUpper_ch_le_Z:
+	addi 	$v0, $zero, 1
+	j isUpper_ch_phi
+	nop
+
+	# ... else
+isUpper_ch_lt_A:
+isUpper_ch_gt_Z:
+	move 	$v0, $zero
+	# fallthrough
+isUpper_ch_phi:
+
+isUpper__post:
 	# tear down stack frame
+	lw	$ra, -4($fp)
+	la	$sp, 4($fp)
+	lw	$fp, ($fp)
 	jr	$ra
 	nop	# in delay slot
 
