@@ -185,6 +185,7 @@ is_ident:
 			bne  $t0, $t3, return0
 
 	 # Incrementing through loop
+	 finish: 
 	 addi $s1, $s1, 1 											# col++;
 	 j 		col_loop
 
@@ -219,8 +220,9 @@ is_ident:
 			j 	 epilogue
 
 	 matrix_cond:
-		  # beq 															 # if (m[row][col] != 1), j return0;
+		  # bne 															 # if (m[row][col] != 1), j return0;
 			li 	 $t3, 1
 			bne  $t0, $t3, return0
+			j finish
 	 		
 
