@@ -147,11 +147,58 @@ is_ident:
    # if you need to save more than four $s? registers
    # add extra code here to save them on the stack
 
-# ... your code for the body of is_ident(m,N) goes here ...
+	 # ... your code for the body of is_ident(m,N) goes here ...
+	 # $a0 = pointer to the first element in the matrix
+	 # $a1 = # of rows/columns in matrix
+
+	 # $s0 = row counter
+	 # $s1 = col counter
+
+	 # Iterating through loop
+	 li 	$s0, 0
+	 row_loop: 															# while (row < n)
+	 		bge 	$s0, $a1, end_row_loop
+
+	 li 	$s1, 0 														# col = 0;
+	 col_loop: 															# white (col < n)
+	 		bge 	$s1, $a1, end_col_loop
+
+			beq	  $s0, $s1, matrix_cond					# if (row == col)
+
+			## TODO: body of comparative operations to find m[row][col] (wip)
+
+			move 	$t0, $a0 											# moves first element into $t0
+			li 		$t2, 4 											  # loads 4 into $t2
+			move 	$t1, $s0 											# moves row counter into $t1
+
+			# operations
+			mul  $t1, $t1, $a1 									# multiply row counter by #rows
+   		add  $t1, $t1, $s1 									# multiply ^ by col counter
+   		mul  $t1, $t1, $t2 									# multiply by 4
+   		add  $t0, $t0, $t1 									# add $t1 to the first element 
+   		lw   $t0, ($t0) 										# loads value @ $t0 into $t0
+			
+																					# assuming that $t0 holds m[row][col]
+
+			# bne 															# if (m[row][col] != 0), j return0;
+			bne  $t0, 0, return0
+
+	 # Incrementing through loop
+	 addi $s1, $s1, 1 											# col++;
+	 j 		col_loop
+
+	 end_col_loop:
+	 		addi 	$s0, $s0, 1 									# row++;
+		 	j 		row_loop
+
+	 end_row_loop:
+	 		li $v0, 1 													# return 1;
 
 # epilogue
    # if you saved more than four $s? registers
    # add extra code here to restore them
+	 epilogue:
+
    lw   $s3, ($sp)
    addi $sp, $sp, 4
    lw   $s2, ($sp)
@@ -165,4 +212,14 @@ is_ident:
    lw   $fp, ($sp)
    addi $sp, $sp, 4
    j    $ra
+
+	 return0: 														   # return 0;
+	 		li   $v0, 0
+			j 	 epilogue
+
+	 matrix_cond:
+		  # beq 															 # if (m[row][col] != 1), j return0;
+			li 	 $t3, 1
+			bne  $t0, $t3, return0
+	 		
 

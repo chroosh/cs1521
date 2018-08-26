@@ -43,5 +43,21 @@ int is_ident(int m[N][N], int n)
 			}
 		}
 	}
+
+	// using while loops
+	int r = 0;
+	int c = 0;
+	
+	while (r < n) {
+		while (c < n) {
+			if (r = c) {
+				if (m[r][c] != 1) return 0;
+			} else {
+				if (m[r][c] != 0) return 0;
+			}
+			c++;
+		}
+		r++;
+	}
 	return 1;
 }
