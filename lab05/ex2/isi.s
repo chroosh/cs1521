@@ -185,9 +185,9 @@ is_ident:
 			bne  $t0, $t3, return0
 
 	 # Incrementing through loop
-	 finish: 
-	 addi $s1, $s1, 1 											# col++;
-	 j 		col_loop
+	 increment: 
+	 		addi $s1, $s1, 1 											# col++;
+	 		j 		col_loop
 
 	 end_col_loop:
 	 		addi 	$s0, $s0, 1 									# row++;
@@ -223,6 +223,6 @@ is_ident:
 		  # bne 															 # if (m[row][col] != 1), j return0;
 			li 	 $t3, 1
 			bne  $t0, $t3, return0
-			j finish
+			j increment
 	 		
 
