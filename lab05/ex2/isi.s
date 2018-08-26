@@ -163,8 +163,6 @@ is_ident:
 	 col_loop: 															# white (col < n)
 	 		bge 	$s1, $a1, end_col_loop
 
-			beq	  $s0, $s1, matrix_cond					# if (row == col)
-
 			## TODO: body of comparative operations to find m[row][col] (wip)
 
 			move 	$t0, $a0 											# moves first element into $t0
@@ -179,6 +177,8 @@ is_ident:
    		lw   $t0, ($t0) 										# loads value @ $t0 into $t0
 			
 																					# assuming that $t0 holds m[row][col]
+
+			beq	  $s0, $s1, matrix_cond					# if (row == col)
 
 			# bne 															# if (m[row][col] != 0), j return0;
 			bne  $t0, 0, return0
