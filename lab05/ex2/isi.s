@@ -180,8 +180,9 @@ is_ident:
 
 			beq	  $s0, $s1, matrix_cond					# if (row == col)
 
-			# bne 															# if (m[row][col] != 0), j return0;
-			bne  $t0, 0, return0
+			# beq																# if (m[row][col] != 0), j return0;
+			li 	 $t3, 0
+			bne  $t0, $t3, return0
 
 	 # Incrementing through loop
 	 addi $s1, $s1, 1 											# col++;
