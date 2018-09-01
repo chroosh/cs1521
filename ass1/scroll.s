@@ -57,6 +57,8 @@ main__1:	.asciiz	"Only letters and spaces are allowed in the string!\n"
 main__2:	.asciiz "String mush be < "
 main__3:	.asciiz " chars\n"
 main__4:	.asciiz "Please enter a string with at least one character!\n"
+eol: 			.asciiz "\n"
+space: 		.asciiz " "
 
 	.align	4
 theString:	.space	101	# MAXCHARS + 1
@@ -110,11 +112,15 @@ main:
 	# set up stack frame
 	sw	$fp, -4($sp)
 	la	$fp, -4($sp)
-	sw	$ra, -4($fp)  # note: switch to $fp-relative
-	sw	$s0, -8($fp)
-	sw	$s1, -12($fp)
-	sw	$s2, -16($fp)
-	addi	$sp, $sp, -20
+	sw	$ra, -4($fp)  						# note: switch to $fp-relative
+	sw	$s0, -8($fp) 							# theLength
+	sw	$s1, -12($fp) 						# bigLength
+	sw	$s2, -16($fp) 						# ch
+	sw  $s3, -20($fp) 						# i
+	sw 	$s4, -24($fp) 						# j
+	sw 	$s5, -28($fp) 						# row
+	sw 	$s6, -32($fp) 						# col
+	addi	$sp, $sp, -36
 
 	# if (argc < 2)
 	li	$t0, 2
@@ -251,7 +257,65 @@ main_theLength_lt_1:
 	nop	# in delay slot
 main_theLength_ge_1:
 
-	# ... TODO ...
+	# ... TODO ... starting from 73
+	# $t0 = NROWS
+	# $t1 = NDCOLS
+	lw 	 $t0, NROWS
+	lw 	 $t1, NDCOLS
+
+	# i = $s3, j = $s4
+	# initialise display to all spaces
+	li   $s3, 0
+	init_spaces_row:
+		bge   $s3, $t0, end_init_spaces_row
+
+	li 	 $s4, 0
+	init_spaces_col:
+		bge  	$s4, $t1, end_init_spaces_col
+
+		# display[i][j] = 0;
+		la 		$t2, display
+		move 	$t3, $s3
+		
+		mul 	$t3, $t3, $t1
+		add 	$t3, $t3, $s4
+
+		add 	$t2, $t2, $t3
+		lw 		$t2, ($t2)
+
+		la 		$t2, space
+	
+	spaces_increment:
+		addi 	$s4, $s4, 1
+		j 		init_spaces_col
+
+	end_init_spaces_col:
+		addi 	$s3, $s3, 1
+		j 		init_spaces_row
+
+	end_init_spaces_row:
+
+	# create bigchars array
+	# i = $s3, theLength = $s0
+	li 	 $s3, 0		
+	big_chars_i_loop:
+		bge   $s3, $s0, end_big_chars_i_loop
+
+		addi 	$s0, $s0, $s3
+		lw 		$s0, ($s0)
+		move 	$s2, $s0 						# moves theString[i] into ch
+
+		bne 	$s2, space, ch_ne_space
+		
+		# write double for loops	
+
+
+		ch_ne_space:
+	
+	end_big_chars_i_loop:
+		
+
+
 
 	# return 0
 	move	$v0, $zero
@@ -293,16 +357,125 @@ setUpDisplay:
 	sw	$fp, -4($sp)
 	la	$fp, -4($sp)
 	sw	$ra, -4($fp)
-	la	$sp, -8($fp)
+	sw  $s0, -8($fp) 		 	 		# $s0 = row
+	sw 	$s1, -12($fp) 				# $s1 = out_col
+	sw  $s2, -16($fp) 				# $s2 = in_col
+	sw  $s3, -20($fp) 				# $s3 = first_col
+	la	$sp, -24($fp)
+
+	# $a0 holds starting
+	# $a1 holds length
+	lw  $t0, NROWS
+	lw 	$t3, NDCOLS
+	lw  $t6, NSCOLS
 
 	# ... TODO ...
+	bge $a0, 0, starting_ge_0
+
+	# if (starting < 0)
+	starting_lt_0:
+		li  $s1, 0 								# out_col = 0
+		mul $s3, $a0, -1 					# first_col = -starting
+		j 	part2
+	
+	# else
+	starting_ge_0:
+
+		# outer for loop
+		li  $s1, 0
+		out_col_loop: 						# if (out_col >= starting)
+			bge $s1, $a0, end_out_col_loop
+
+		# inner for loop
+		li 	$s0, 0
+		row_loop1: 								# if (row >= NROWS)
+			bge 	$s0, $t0, end_row_loop1
+
+			# display[row][out_col] = ' ';
+			la  	$t1, display 				# display matrix stored in $t1
+			move 	$t2, $s0 						# row stored in $t2
+
+			mul 	$t2, $t2, $t3 			# multiplying by NDCOLS
+			add 	$t2, $t2, $s1 			# (row * NROWS) + out_col
+		
+			add 	$t1, $t1, $t2 			# adding onto $t1 (display)
+			lw 		$t1, ($t1) 					# loads value @ $t2 into $t2
+
+			la 		$t1, space 					# ' ' into $t1
+			
+		setup_increment1:
+			addi  $s0, $s0, 1
+			j 		row_loop1
+
+		end_row_loop1:
+			addi 	$s1, $s1, 1
+			j 		out_col_loop
+
+		end_out_col_loop:
+			li 		$s3, 0
+			j 		part2
+			
+	part2:
+		
+		# outer for loop
+		move  $s2, $s3 
+		in_col_loop:
+			bge $s2, $a1, end_in_col_loop
+
+		bge $s1, $t3, epilogue_setup_display
+
+		# inner for loop
+		li 	$s0, 0
+		row_loop2:
+			bge  $s0, $t0, end_row_loop2
+
+			# WIP TODO
+			# display[row][out_col] = bigString[row][in_col]
+
+			# display stored in $t1
+			# bigString stored in $t4
+			la   $t4, bigString 
+			move $t5, $s0
+
+			mul  $t5, $t5, $t6 				# multiplying by NSCOLS
+			add  $t5, $t5, $s2
+			
+			add  $t4, $t4, $t5
+			lb 	 $t4, bigString($t4)	# bigString[row][in_col]
+				
+			###
+		
+			la   $t1, display
+			move $t5, $s0
+
+			mul  $t5, $t5, $t3 				# multiplying by NDCOLS
+			add  $t5, $t5, $s1
+
+			add  $t1, $t1, $t5 				# display[row][out_col]
+			sb 	 $t4, display($t1) 		# storing display into bigstring
+
+		setup_increment2:
+			addi  $s0, $s0, 1
+			j 		row_loop2
+
+		end_row_loop2:
+			addi 	$s2, $s2, 1
+			j 		in_col_loop
+
+		end_in_col_loop:
+			j 		epilogue_setup_display
 
 	# tear down stack frame
-	lw	$ra, -4($fp)
-	la	$sp, 4($fp)
-	lw	$fp, ($fp)
-	jr	$ra
-	nop	# in delay slot
+	epilogue_setup_display:
+		lw 	$s3, -20($fp)
+		lw 	$s2, -16($fp)
+		lw 	$s1, -12($fp)
+		lw 	$s0, -8($fp)
+		lw	$ra, -4($fp)
+		la	$sp, 4($fp)
+		lw	$fp, ($fp)
+		jr	$ra
+		nop	# in delay slot
 
 ########################################################################
 # .TEXT <showDisplay>
@@ -329,16 +502,67 @@ showDisplay:
 	sw	$fp, -4($sp)
 	la	$fp, -4($sp)
 	sw	$ra, -4($fp)
-	la	$sp, -8($fp)
+	sw  $s0, -8($fp) 				 	# s0 = i (< NROWS)
+	sw 	$s1, -12($fp) 			 	# s1 = j (< NDCOLS)
+	addi 	$sp, $sp, -16
+	#la	$sp, -8($fp)
+	
+	# setup
+	lw 	$t0, NROWS
+	lw 	$t1, NDCOLS
+
+	# printf(CLEAR)
+	la 	$a0, CLEAR
+	li 	$v0, 4
+	syscall
 
 	# ... TODO ...
+	li 	$s0, 0
+	show_row_loop:
+		bge  $s0, $t0, end_show_row_loop
+	
+	li  $s1, 0
+	show_col_loop:
+		bge  $s1, $t1, end_show_col_loop
+
+		# section to putchar
+		la   $t2, display      # display matrix stored in $t2
+		move $t3, $s0 				 # i stored in $t3
+
+		mul  $t3, $t3, $t1 	 	 # multiply i by NDCOLS
+		add  $t3, $t3, $s1 		 # (i*NDCOLS) + j
+
+		add  $t2, $t2, $t3 		 # adding onto $t2 (display)
+		lw   $t2, ($t2) 			 # loads value @ $t2 into $t2
+
+		move $a0, $t2 				 # putchar(display[i][j])
+		li 	 $v0, 11
+		syscall
+
+	# increment:
+		la 		$a0, eol 				 # printf ("\n");
+		li 		$v0, 4
+		syscall
+
+		addi 	$s1, $s1, 1
+		j 		show_col_loop
+
+	end_show_col_loop:
+		addi  $s0, $s0, 1
+		j 		show_row_loop
+
+	end_show_row_loop:
+		j 		epilogue_show_display
 
 	# tear down stack frame
-	lw	$ra, -4($fp)
-	la	$sp, 4($fp)
-	lw	$fp, ($fp)
-	jr	$ra
-	nop	# in delay slot
+	epilogue_show_display:
+		lw  $s1, -12($fp)
+		lw 	$s0, -8($fp)
+		lw	$ra, -4($fp)
+		la	$sp, 4($fp)
+		lw	$fp, ($fp)
+		jr	$ra
+		nop	# in delay slot
 
 ########################################################################
 # .TEXT <delay>

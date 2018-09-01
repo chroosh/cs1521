@@ -170,7 +170,7 @@ is_ident:
 			move 	$t1, $s0 											# moves row counter into $t1
 
 			# operations
-			mul  $t1, $t1, $a1 									# multiply row counter by #rows
+			mul  $t1, $t1, $a1 									# multiply row counter by #rows/column
    		add  $t1, $t1, $s1 									# multiply ^ by col counter
    		mul  $t1, $t1, $t2 									# multiply by 4
    		add  $t0, $t0, $t1 									# add $t1 to the first element 

@@ -65,7 +65,8 @@ int main(int argc, char **argv)
       printf("String must be < %d chars\n", MAXCHARS);
       return 1;
    }
-   if (theLength < 1) {
+   
+	 if (theLength < 1) {
       printf("Please enter a string with at least one character!\n");
       exit(1);
    }
@@ -84,8 +85,7 @@ int main(int argc, char **argv)
              for (col = 0; col < CHRSIZE; col++)
                 bigString[row][col + i * (CHRSIZE+1)] = ' ';
          }
-      }
-      else {
+      } else {
          int which;
          // calculate index of the char in all_chars
          if (isUpper(ch)) which = ch - 'A'; 
@@ -131,8 +131,7 @@ void setUpDisplay(int starting, int length)
       // it's scrolling off the left of the display
       out_col = 0;
       first_col = -starting;
-   }
-   else {
+   } else {
       // blank out the part of the display before the string
       for (out_col = 0; out_col < starting; out_col++) {
          for (row = 0; row < NROWS; row++)
@@ -140,6 +139,7 @@ void setUpDisplay(int starting, int length)
       }
       first_col = 0;
    }
+
    // copy the relevant bits of the bigString into the display
    for (in_col = first_col; in_col < length; in_col++) {
       if (out_col >= NDCOLS) break;
@@ -159,6 +159,18 @@ void showDisplay()
          putchar(display[i][j]);
       putchar('\n');
    }
+
+	 int i = 0;
+	 int j = 0;
+
+	 while (i < NROWS) {
+		 while (j < NROWS) {
+			 putchar(display[i][j]);
+			 j++;
+		 }
+		 putchar('\n');
+		 i++;
+	 }
 }
 
 // waste some time
