@@ -622,12 +622,12 @@ main:
 #	- `bigLength' in $s1
 #	- `ch' in $s2
 #	- `str' in $t2
-#	- `i' in $...
-#	- `j' in $...
-#	- `row' in $...
-#	- `col' in $...
-#	- `iterations' in $...
-#	- `startingCol' in $...
+#	- `i' in $s3
+#	- `j' in $s4
+#	- `row' in $s5
+#	- `col' in $s6
+#	- `iterations' in $s7
+#	- `startingCol' in $s4
 
 # Structure:
 #	main
@@ -645,18 +645,26 @@ main:
 #	  | main_theLength_lt_MAXCHARS
 #	  | main_theLength_lt_1
 #	  | main_theLength_ge_1
-#	...
+# 
+#	-> initialise display to all spaces
+# -> create bigchars
+# -> final (function calls)
 #	-> [epilogue]
 
 # Code:
 	# set up stack frame
 	sw	$fp, -4($sp)
 	la	$fp, -4($sp)
-	sw	$ra, -4($fp)  # note: switch to $fp-relative
-	sw	$s0, -8($fp)
-	sw	$s1, -12($fp)
-	sw	$s2, -16($fp)
-	addi	$sp, $sp, -20
+	sw	$ra, -4($fp)  						# note: switch to $fp-relative
+	sw	$s0, -8($fp) 							# theLength
+	sw	$s1, -12($fp) 						# bigLength
+	sw	$s2, -16($fp) 						# ch
+	sw  $s3, -20($fp) 						# i
+	sw 	$s4, -24($fp) 						# j/starting_col
+	sw 	$s5, -28($fp) 						# row
+	sw 	$s6, -32($fp) 						# col
+	sw 	$s7, -36($fp) 						# iterations
+	addi	$sp, $sp, -40
 
 	# if (argc < 2)
 	li	$t0, 2
@@ -793,16 +801,235 @@ main_theLength_lt_1:
 	nop	# in delay slot
 main_theLength_ge_1:
 
-	# ... TODO ... starting from 73
+	# ... TODO ... starting from line 73 in scroll.c
+	# items marked with a [x] indicate that they have been tested using syscalls
 
-	# initialise display to all spaces
+	# $t0 = NROWS
+	# $t1 = NDCOLS
+	lw 	 $t0, NROWS
+	lw 	 $t1, NDCOLS
+
+	# [x] initialise display to all spaces
+	li   $s3, 0 														 	# i = $s3
+	init_spaces_row:
+		bge   $s3, $t0, end_init_spaces_row 		# if (i >= NROWS)
+
+	li 	 $s4, 0 														 	# j = $s4
+	init_spaces_col:
+		bge  	$s4, $t1, end_init_spaces_col 		# if (j >= NDCOLS)
+
+		# display[i][j] = 0;
+		move 	$t3, $s3 													# move row into $t3
+		mul 	$t3, $t3, $t1 										# $t3 = i * NDCOLS
+		add 	$t3, $t3, $s4 										# $t3 = (i * NDCOLS) + j
+
+		li 		$t2, ' ' 													# $t2 holding ' '
+		sb 		$t2, display($t3) 								# storing ' ' into display($t3)
+
+	spaces_increment:
+		addi 	$s4, $s4, 1
+		j 		init_spaces_col
+
+	end_init_spaces_col:
+		addi 	$s3, $s3, 1
+		j 		init_spaces_row
+
+	end_init_spaces_row:
 
 
+	# [x] create bigchars array
+	lw 	 $t0, CHRSIZE 												# $t0 = CHRSIZE
+	lw 	 $t3, NSCOLS 													# $t0 = NSCOLS
+	li 	 $s3, 0																# $s3 = i
+
+	bigchars_i_loop:
+		bge   $s3, $s0, end_bigchars_i_loop 		# if (i >= theLength)
+
+		lb 		$s2, theString($s3) 							# ch = theString[i]
+		li 		$t1, ' '
+		bne 	$s2, $t1, ch_ne_space 						# if (ch == ' ')
+		
+		# double for loop 
+		li 		$s5, 0 														# $s5 = row
+		bigchars_row_loop:
+			bge  	$s5, $t0, end_bigchars_row_loop 
+
+		li 		$s6, 0 														# $s6 = col
+		bigchars_col_loop:
+			bge 	$s6, $t0, end_bigchars_col_loop
+
+			# prologue
+			addi 	$t4, $t0, 1  										# (CHRSIZE + 1)
+			mul 	$t4, $t4, $s3 									# (CHRSIZE + 1) * i
+			add 	$t4, $t4, $s6 									# (CHRSIZE + 1) * i + col
+
+			# body	
+			move 	$t2, $s5 												# move row into $t2
+			mul 	$t2, $t2, $t3 									# $t2 = row * NSCOLS
+			add 	$t2, $t2, $t4 									# $t2 = (row * NSCOLS) + $t4
+
+			li 		$t4, ' ' 												# $t4 holding ' '
+			sb 		$t4, bigString($t2) 						# storing ' ' into bigString($t2)
+
+		bigchars_inner_increment:
+			addi  $s6, $s6, 1
+			j 		bigchars_col_loop
+
+		end_bigchars_col_loop:
+			addi 	$s5, $s5, 1
+			j 		bigchars_row_loop
+		
+		end_bigchars_row_loop:
+			j 		bigchars_part2
+
+		# else
+		ch_ne_space: 														# if (ch != ' ')
+			
+			li 		$t5, 0 													# $t5 = which
+			li 		$t6, 1 													# $t6 = 1
+			
+			# if (isUpper(ch))
+			bigchars_isUpper:
+				move 	$a0, $s2
+				jal 	isUpper
+				bne 	$v0, $t6, bigchars_isLower
+			
+				move  $t5, $s2 											# move ch into which
+				sub 	$t5, $t5, 65 									# $t5 = ch - 65
+				j 		bigchars_else_loop
+
+			# if (isLower(ch))
+			bigchars_isLower:
+				move 	$a0, $s2
+				jal 	isLower
+				bne 	$v0, $t6, bigchars_else_loop
+			
+				move 	$t5, $s2 											# move ch into which
+				sub 	$t5, $t5, 97 									# $t5 = ch - 97
+				addi 	$t5, $t5, 26 									# $t5
+				j 		bigchars_else_loop
+
+			bigchars_else_loop:	
+				li 		$s5, 0 												# $s5 = row
+				bigchars_row_loop2: 								# if (row > CHRSIZE)
+					bge 	$s5, $t0, end_bigchars_row_loop2 	
+
+				li 		$s6, 0 												# s6 = col
+				bigchars_col_loop2: 								# if (col > CHRSIZE)
+					bge  	$s6, $t0, end_bigchars_col_loop2
+					
+					lw 		$t0, CHRSIZE
+					lw 		$t3, NSCOLS
+
+					# allchars 
+					move  $t8, $t5
+					mul 	$t8, $t8, $t0
+					mul 	$t8, $t8, $t0 							# $t8 = which * CHRSIZE^2
+					
+					move 	$t9, $s5
+					mul 	$t9, $t9, $t0 							# $t9 = row * CHRSIZE
+
+					add 	$t8, $t8, $t9 							# $t8 = $t8 + $t9
+					add 	$t8, $t8, $s6 							# $t8 + col
+
+					lb 		$t7, all_chars($t8)
+
+					# bigString
+					addi  $t4, $t0, 1 								# (CHRSIZE + 1)
+					mul 	$t4, $t4, $s3 							# (CHRSIZE + 1) * i
+					add 	$t4, $t4, $s6 							# (CHRSIZE + 1) * i + col
+					
+					move 	$t2, $s5
+					mul 	$t2, $t2, $t3 							# row * NSCOLS
+					add 	$t2, $t2, $t4 							# (row * NSCOLS) + $t4
+
+					sb 		$t7, bigString($t2)
+
+				bigchars_inner_increment2:
+					addi 	$s6, $s6, 1
+					j 		bigchars_col_loop2
+
+				end_bigchars_col_loop2:
+					addi 	$s5, $s5, 1
+					j 		bigchars_row_loop2
+
+				end_bigchars_row_loop2:
+					j 		bigchars_part2
+
+		bigchars_part2:
+			move  $s6, $t0 												# move CHRSIZE into col
+			add 	$s6, $s6, 1 										# (CHRSIZE + 1)
+			mul 	$s6, $s6, $s3  									# (CHRSIZE + 1) * i
+			add 	$s6, $s6, $t0 									# (CHRSIZE + 1) * i + CHRSIZE
+
+			li 		$s5, 0
+			bigchars_part2_loop:
+				bge 	$s5, $t0, end_bigchars_part2_loop 
+
+				# body
+				move 	$t2, $s5 											# move row into $t2
+				mul 	$t2, $t2, $t3 								# row * NSCOLS
+				add 	$t2, $t2, $s6  								# (row * NSCOLs) + col
+
+				li 		$t9, ' '
+				sb 		$t9, bigString($t2)
+				
+			bigchars_part2_loop_incremement:
+				addi 	$s5, $s5, 1
+				j 		bigchars_part2_loop
+
+			end_bigchars_part2_loop:
+	
+	bigchars_increment:
+		addi  $s3, $s3, 1 	
+		j 		bigchars_i_loop
+	
+	end_bigchars_i_loop:
+		
+	# [x] enough to scroll it completely off the left
+	lw 		$t0, NDCOLS
+	add 	$s7, $t0, $s1 				 							# iterations = NDCOLS + bigLength
+	sub 	$s4, $t0, 1 												# starting_col = NDCOLS - 1
+
+	
+	# [x] final loop
+	li 		$s3, 0 															# i = $s3
+	final_loop:
+		bge 	$s3, $s7, end_final_loop
+
+		# setUpDisplay(starting_col, bigLength)
+		move 	$a0, $s4 													# move starting_col into $a0
+		move 	$a1, $s1 													# move bigLength into $a1
+		jal 	setUpDisplay
+		nop
+
+		# showDisplay()
+		jal  	showDisplay
+		nop
+
+		# starting_col--;
+		sub 	$s4, $s4, 1
+
+		# delay (1)
+		li 		$a0, 1
+		jal 	delay
+		nop
+
+	final_loop_increment:
+		addi 	$s3, $s3, 1	
+		j 		final_loop
+
+	end_final_loop:
 
 	# return 0
 	move	$v0, $zero
 main__post:
 	# tear down stack frame
+	lw 	$s7, -36($fp)
+	lw 	$s6, -32($fp)
+	lw 	$s5, -28($fp)
+	lw 	$s4, -24($fp)
+	lw 	$s3, -20($fp)
 	lw	$s2, -16($fp)
 	lw	$s1, -12($fp)
 	lw	$s0, -8($fp)
@@ -822,16 +1049,21 @@ setUpDisplay:
 # Clobbers:	...
 
 # Locals:
-#	- `row' in $...
-#	- `out_col' in $...
-#	- `in_col' in $...
-#	- `first_col' in $...
+#	- `row' in $s0
+#	- `out_col' in $s1
+#	- `in_col' in $s2
+#	- `first_col' in $s3
 #	- ...
 
 # Structure:
 #	setUpDisplay
 #	-> [prologue]
-#	-> ...
+#	-> setup
+# -> starting_lt_0
+# -> starting_ge_0
+# 	-> double for loop
+# -> part2
+# 	-> double for loop
 #	-> [epilogue]
 
 # Code:
@@ -839,49 +1071,43 @@ setUpDisplay:
 	sw	$fp, -4($sp)
 	la	$fp, -4($sp)
 	sw	$ra, -4($fp)
-	sw  $s0, -8($fp) 		 	 		# $s0 = row
-	sw 	$s1, -12($fp) 				# $s1 = out_col
-	sw  $s2, -16($fp) 				# $s2 = in_col
-	sw  $s3, -20($fp) 				# $s3 = first_col
+	sw  $s0, -8($fp) 		 	 										# $s0 = row
+	sw 	$s1, -12($fp) 												# $s1 = out_col
+	sw  $s2, -16($fp) 												# $s2 = in_col
+	sw  $s3, -20($fp) 												# $s3 = first_col
 	la	$sp, -24($fp)
 
-	# $a0 holds starting
-	# $a1 holds length
-	lw  $t0, NROWS
+	# setup
+	lw  $t0, NROWS 														# $t0 = NROWS
+	lw 	$t3, NDCOLS 													# $t3 = NDCOLS
+	lw  $t6, NSCOLS 													# $t6 = NSCOLS
 
-	# ... TODO ...
-	bge $a0, 0, starting_ge_0
+	move  $t8, $a0 														# moves $a0 (starting) into $t8
+	bge $t8, 0, starting_ge_0 								# if (starting < 0)
 
-	# if (starting < 0)
-	starting_lt_0
-		li  $s1, 0 								# out_col = 0
-		mul $s3, $a0, -1 					# first_col = -starting
-		j 	part2
+	starting_lt_0:
+		li  $s1, 0 															# out_col = 0
+		mul $s3, $t8, -1 												# first_col = -starting
+		j 	setup_part2
 	
 	# else
-	starting_ge_0:
+	starting_ge_0: 														# if (starting > 0)
 
-		# outer for loop
 		li  $s1, 0
-		out_col_loop: 						# if (out_col >= starting)
-			bge $s1, $a0, end_out_col_loop
+		out_col_loop:
+			bge 	$s1, $t8, end_out_col_loop 			# if (out_col >= starting)
 
-		# inner for loop
 		li 	$s0, 0
-		row_loop1: 								# if (row >= NROWS)
-			bge $s0, $t0, end_row_loop1
+		row_loop1:
+			bge 	$s0, $t0, end_row_loop1 				# if (row >= NROWS)
 
 			# display[row][out_col] = ' ';
-			la  $t1, display 				# display matrix stored in $t1
-			li 	$t2, $s0 						# row stored in $t2
-
-			mul $t2, $t2, $t0 			# multiplying by NROWS
-			add $t2, $t2, $s1 			# (row * NROWS) + out_col
-		
-			add $t1, $t1, $t2 			# adding onto $t1 (display)
-			lw 	$t1, ($t1) 					# loads value @ $t2 into $t2
-
-			la 	$t1, space 					# ' ' into $t1
+			move 	$t2, $s0 												# move row in $t2
+			mul 	$t2, $t2, $t3 									# row * NDCOLS
+			add 	$t2, $t2, $s1 									# (row * NDCOLS) + out_col
+			
+			li 		$t7, ' '
+			sb 		$t7, display($t2)
 			
 		setup_increment1:
 			addi  $s0, $s0, 1
@@ -893,53 +1119,44 @@ setUpDisplay:
 
 		end_out_col_loop:
 			li 		$s3, 0
-			j 		part2
+			j 		setup_part2
 			
 	
-	part2:
+	setup_part2:
 		
-		# outer for loop
-		li  $s2, $s3 
+		move  $s2, $s3 													# move first col into in_col 
 		in_col_loop:
-			bge $s2, $a1, end_in_col_loop
+			bge  $s2, $a1, end_in_col_loop 				# if (first_col >= length)
 
-		lw  $t3, NDCOLS
-		bge $s1, $t3, epilogue_setup_display
+		bge $s1, $t3, epilogue_setup_display 		# if (out_col >= NDCOLS)
 
-		# inner for loop
 		li 	$s0, 0
 		row_loop2:
 			bge  $s0, $t0, end_row_loop2
 
 			# display[row][out_col] = bigString[row][in_col]
-
-			# display stored in $t1
-			# bigString stored in $t4
-			la   $t4, bigString 
-			li 	 $t5, $s0
-
-			mul  $t5, $t5, $t0
-			add  $t5, $t5, $s2
+			move $t5, $s0 												# move row into $t5
+			mul  $t5, $t5, $t6 										# row * NDCOLS
+			add  $t5, $t5, $s2 										# (row * NDCOLS) + in_col 
 			
-			add  $t4, $t4, $t5
-			lw 	 $t4, ($t4) 				# bigString[row][in_col]
+			lb 	 $t7, bigString($t5)							# bigString[row][in_col]
 
-			la   $t1, display
-			li 	 $t5, $s0
+			###
+		
+			move $t5, $s0 												# move row into $t5
+			mul  $t5, $t5, $t3 										# row * NSCOLS
+			add  $t5, $t5, $s1 										# (row * NSCOLS) + out_col
 
-			mul  $t5, $t5, $t0
-			add  $t5, $t5, $s1 			# display[row][out_col]
-
-			add  $t1, $t1, $t5
-
-			sw   $t4, ($t1) 				# storing display into bigstring
-
+			sb 	 $t7, display($t5) 								# display[row][out_col]
+			
 		setup_increment2:
 			addi  $s0, $s0, 1
 			j 		row_loop2
 
 		end_row_loop2:
 			addi 	$s2, $s2, 1
+			addi 	$s1, $s1, 1
+			
 			j 		in_col_loop
 
 		end_in_col_loop:
@@ -967,14 +1184,16 @@ showDisplay:
 # Clobbers:	...
 
 # Locals:
-#	- `i' in $...
-#	- `j' in $...
-#	- ...
+#	- `i' in $s0
+#	- `j' in $s1
 
 # Structure:
 #	showDisplay
 #	-> [prologue]
-#	-> ...
+#	-> setup
+# -> printf(CLEAR)
+# -> show_row_loop
+# -> show_col_loop
 #	-> [epilogue]
 
 # Code:
@@ -982,10 +1201,9 @@ showDisplay:
 	sw	$fp, -4($sp)
 	la	$fp, -4($sp)
 	sw	$ra, -4($fp)
-	sw  $s0, -8($fp) 				 	# s0 = i (< NROWS)
-	sw 	$s1, -12($fp) 			 	# s1 = j (< NDCOLS)
+	sw  $s0, -8($fp) 				 								  # s0 = i (< NROWS)
+	sw 	$s1, -12($fp) 			 									# s1 = j (< NDCOLS)
 	addi 	$sp, $sp, -16
-	#la	$sp, -8($fp)
 	
 	# setup
 	lw 	$t0, NROWS
@@ -996,7 +1214,6 @@ showDisplay:
 	li 	$v0, 4
 	syscall
 
-	# ... TODO ...
 	li 	$s0, 0
 	show_row_loop:
 		bge  $s0, $t0, end_show_row_loop
@@ -1005,29 +1222,28 @@ showDisplay:
 	show_col_loop:
 		bge  $s1, $t1, end_show_col_loop
 
-		# section to putchar
-		la   $t2, display      # display matrix stored in $t2
-		li 	 $t3, $s0 				 # i stored in $t3
+		la   $t2, display      									# display matrix stored in $t2
+		move $t3, $s0 				 									# i stored in $t3
 
-		mul  $t3, $t3, $t0 	 	 # multiply i by NROWS
-		add  $t3, $t3, $s1 		 # (i*NROWS) + j
+		mul  $t3, $t3, $t1 	 	 									# i * NDCOLS
+		add  $t3, $t3, $s1 		 									# (i * NDCOLS) + j
 
-		add  $t2, $t2, $t3 		 # adding onto $t2 (display)
-		lw   $t2, ($t2) 			 # loads value @ $t2 into $t2
+		add  $t2, $t2, $t3 		 									# display + (i * NDCOLS) + j
 
-		li 	 $a0, $t2 				 # putchar(display[i][j])
+		lb 	 $t3, ($t2) 			 									# load ($t2) into $t3
+		move $a0, $t3 				 									# putchar(display[i][j])
 		li 	 $v0, 11
 		syscall
 
-	# increment:
-		la 		$a0, eol 				 # printf ("\n");
-		li 		$v0, 4
-		syscall
-
+	show_increment:
 		addi 	$s1, $s1, 1
 		j 		show_col_loop
 
 	end_show_col_loop:
+		la 		$a0, eol 				 									# printf ("\n");
+		li 		$v0, 4
+		syscall
+
 		addi  $s0, $s0, 1
 		j 		show_row_loop
 
@@ -1085,9 +1301,9 @@ delay:
 
 	# x <- 0
 	move	$t0, $zero
-	# These values control the busy-wait.
-	li	$t4, 20000
-	li	$t5, 1000
+	# These values control the busy-wait. (values changed)
+	li	$t4, 100
+	li	$t5, 30
 
 delay_i_init:
 	# i = 0;
