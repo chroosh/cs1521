@@ -2,8 +2,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-// #include <bsd/string.h>
-#include <string.h>
+#include <bsd/string.h>
+//#include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <dirent.h>
