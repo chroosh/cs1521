@@ -192,7 +192,7 @@ int physicalAddress(uint vAddr, char action)
 	}
 
 
-	// special case of nPages = 2
+	// special case of nPages && nFrames = 2
 	if (nPages == 2 && nFrames == 2) {
 		nLoads = 2;
 		nSaves = 0;
