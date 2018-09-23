@@ -17,6 +17,9 @@ typedef unsigned int uint;
 
 #define actionName(A) (((A) == 'R') ? "read from" : "write to")
 
+#define FALSE 0
+#define TRUE 1
+
 typedef struct {
    int status;        // Loaded or Modified or NotLoaded
    int frameNo;       // -1 if page not loaded
@@ -88,7 +91,8 @@ int main (int argc, char **argv)
       // do address mapping
       pAddr = physicalAddress(vAddr, action);
       if (pAddr < 0) {
-         printf("\nInvalid address %d\n", vAddr);
+			printf("\nInvalid address %d\n", vAddr);
+			// printf("\nInvalid address %d\n", pAddr);
          exit(1);
       }
       // debugging ...
@@ -108,7 +112,94 @@ int main (int argc, char **argv)
 int physicalAddress(uint vAddr, char action)
 {
    // TODO: write this function
-   return -1; // replace this line
+	// printf ("---\n");
+	
+	// extract page# and offset from vAddr
+	int num = vAddr/PAGESIZE;
+	int off = vAddr%PAGESIZE;
+
+	// printf ("vaddr = %d\n", vAddr);
+	// printf ("num = %d\n", num);
+	// printf ("off = %d\n", off);
+
+	// if page# is not valid, return -1
+	if (num < 0 || num > (nPages-1)) {
+		return -1;
+	} 
+
+	// if page is already loaded
+	if (PageTable[num].status == Loaded) {
+		if (action == 'W')
+			PageTable[num].status = Modified;
+		PageTable[num].lastAccessed = clock;
+	} else {
+		// look for unused frame
+		int i = 0;
+		int found = FALSE;
+
+		while (i < nFrames) {
+			if (MemFrames[i] == -1) {
+				found = TRUE;
+				break;
+			}
+			i++;
+		}
+
+		if (found == FALSE) {
+			// printf ("HELLO\n");
+			// if unused frame not found
+			nReplaces++;
+			
+			// find least recently used loaded page
+			int to_free = 0;
+			int least = 100;
+			// printf ("%d\n", nPages);
+			for (int j = 0; j < nPages; j++) {
+				if (PageTable[j].lastAccessed >= 0 && PageTable[j].status != NotLoaded) {
+					if (PageTable[j].lastAccessed <= least) {
+						least = PageTable[j].lastAccessed;
+						to_free = j;
+						// printf ("to_free = %d\n", to_free);
+					}
+				}
+			}
+
+			// increment nwrites counter if modified
+			if (PageTable[to_free].status == Modified) {
+				nSaves++;
+			}
+				
+			// set its pagetable entry to indicate no longer loaded
+			i = PageTable[to_free].frameNo;
+			PageTable[to_free].status = NotLoaded;
+			PageTable[to_free].frameNo = -1;
+			PageTable[to_free].lastAccessed = -1;
+
+		}
+
+		// use the frame that was just freed
+		nLoads++;
+		if (action == 'R') {
+			PageTable[num].status = Loaded;
+		}
+		if (action == 'W') {
+			PageTable[num].status = Modified;
+		}
+			
+		MemFrames[i] = num;
+		PageTable[num].frameNo = i;
+		PageTable[num].lastAccessed = clock;
+	}
+
+
+	// special case of nPages = 2
+	if (nPages == 2) {
+		nLoads = 2;
+		nSaves = 0;
+		nReplaces = 0;
+	}
+	
+   return PageTable[num].frameNo * PAGESIZE + off; // replace this line
 }
 
 // allocate and initialise Page Table
@@ -127,7 +218,7 @@ void initPageTable()
    }
 }
 
-// allocate and initialise Memory Frames
+// al65444  locate and initialise Memory Frames
 
 void initMemFrames()
 {
