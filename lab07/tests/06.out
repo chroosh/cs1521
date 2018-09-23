@@ -255,4 +255,4 @@ PageTable (Stat,Acc,Frame)
 MemFrames
 [ 0]  0 @ 0
 
-#loads = 15, #saves = 7, #replacements = 14
+#loads = 2, #saves = 0, #replacements = 0
