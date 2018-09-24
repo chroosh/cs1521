@@ -13,9 +13,12 @@
 #include <unistd.h>
 #include <assert.h>
 
+#define FALSE 0
+#define TRUE 1
+
 // this next line may not be needed on you machine
 // comment it out if it generates an error
-extern char *strdup(char *);
+// extern char *strdup(char *);
 
 void trim(char *);
 char **tokenise(char *, char *);
@@ -54,7 +57,17 @@ int main(int argc, char *argv[], char *envp[])
       if (strcmp(line,"") == 0) { printf("mysh$ "); continue; }
 
       // TODO: implement the tokenise/fork/execute/cleanup code
+		char **args = tokenise(line, " ");
 
+		pid = fork();
+
+		if (pid != 0) {
+			wait(&stat);
+		} else {
+			execute(args, path, envp);
+		}
+
+		freeTokens(path);
       printf("mysh$ ");
    }
    printf("\n");
@@ -65,6 +78,60 @@ int main(int argc, char *argv[], char *envp[])
 void execute(char **args, char **path, char **envp)
 {
    // TODO: implement the find-the-executable and execve() it code
+	//
+	// init
+	char *command;
+	int found = FALSE;
+
+	// if args[0] starts with '/' or '.'
+	// 	if file called args[0] is executable
+	// 		use args[0] as the command
+
+	// else 
+	// 	for each directories D in path
+	// 		if executable file caleld "D/args[0]" exists
+	// 			use that filename as command
+	
+
+	if (args[0][0] == '/' || args[0][0] == '.') {
+		if (isExecutable(args[0])) {
+			command = strdup(args[0]);
+			found = TRUE;
+		}
+	} else {
+		// path is array of directory names
+		for (int i = 0; path[i] != '\0'; i++) {
+			char *file_name = malloc(100);
+			file_name[0] = '\0';
+			strcat(file_name, path[i]);
+			strcat(file_name, "/");
+			strcat(file_name, args[0]);
+			if (isExecutable(file_name)) {
+				command = strdup(args[0]);
+				found = TRUE;
+			}
+		}
+	}
+	
+	// if no executable file found
+	// 	print command not found message
+	// else 
+	// 	print full name of command being executed
+	// 	use esecve() to attempt to run the command with args and envp
+	// 	if run failed
+	// 		perror("Exec failed")
+	
+	if (found == FALSE) {
+		printf ("Command not found\n");
+	} else {
+		printf ("%s\n", command);
+		execve(command, args, envp);
+		perror ("Exec failed\n");
+	}
+
+
+	//
+	// exit child process
 }
 
 // isExecutable: check whether this process can execute a file
