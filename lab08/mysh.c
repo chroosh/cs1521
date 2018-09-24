@@ -57,11 +57,10 @@ int main(int argc, char *argv[], char *envp[])
       if (strcmp(line,"") == 0) { printf("mysh$ "); continue; }
 
       // TODO: implement the tokenise/fork/execute/cleanup code
-		char **args = tokenise(line, " ");
+		char **args;
+		args = tokenise(line, " ");
 
-		pid = fork();
-
-		if (pid != 0) {
+		if ((pid = fork()) != 0) {
 			wait(&stat);
 		} else {
 			execute(args, path, envp);
@@ -101,13 +100,13 @@ void execute(char **args, char **path, char **envp)
 	} else {
 		// path is array of directory names
 		for (int i = 0; path[i] != '\0'; i++) {
-			char *file_name = malloc(100);
+			char *file_name = malloc(sizeof(char) * 100);
 			file_name[0] = '\0';
 			strcat(file_name, path[i]);
 			strcat(file_name, "/");
 			strcat(file_name, args[0]);
 			if (isExecutable(file_name)) {
-				command = strdup(args[0]);
+				command = strdup(file_name);
 				found = TRUE;
 			}
 		}
@@ -126,7 +125,7 @@ void execute(char **args, char **path, char **envp)
 	} else {
 		printf ("%s\n", command);
 		execve(command, args, envp);
-		perror ("Exec failed\n");
+		perror ("Exec failed");
 	}
 
 
