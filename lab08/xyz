@@ -111,7 +111,6 @@ void execute(char **args, char **path, char **envp)
 				command = strdup(file_name);
 				found = TRUE;
 			}
-			free(file_name);
 		}
 	}
 	
@@ -130,10 +129,10 @@ void execute(char **args, char **path, char **envp)
 		execve(command, args, envp);
 		perror ("Exec failed");
 	}
-	
-	// exit child process
-	// printf ("execute completed\n");
 
+
+	//
+	// exit child process
 }
 
 // isExecutable: check whether this process can execute a file
