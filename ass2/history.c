@@ -77,7 +77,6 @@ int initCommandHistory()
 		}
 	}
 	
-	fclose(f);
 	return 1; 	// return 1 if no file found
 }
 
