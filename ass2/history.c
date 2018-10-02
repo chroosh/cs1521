@@ -117,7 +117,8 @@ void moveEverythingUp(void) {
 void showCommandHistory(FILE *outf)
 {
    // TODO - currently writes to STDOUT, not a file
-	for (int i = 0; i < CommandHistory.nEntries; i++) {
+	for (int i = 0; i < CommandHistory.nEntries && 
+						 CommandHistory.commands[i].commandLine != NULL; i++) {
 		printf (" %3d  ", CommandHistory.commands[i].seqNumber);
 		printf ("%s\n", CommandHistory.commands[i].commandLine);
 	}
@@ -150,9 +151,9 @@ void saveCommandHistory()
 			fprintf (f, " %3d  %s\n", CommandHistory.commands[i].seqNumber, 
 											  CommandHistory.commands[i].commandLine);
 		}
+		fclose(f);
 	}
 
-	fclose(f);
 }
 
 // cleanCommandHistory
