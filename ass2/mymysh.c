@@ -31,7 +31,6 @@ char *findExecutable(char *, char **);
 int isExecutable(char *);
 void prompt(void);
 
-
 // Global Constants
 
 #define MAXLINE 200
@@ -47,10 +46,10 @@ void prompt(void);
 
 int main(int argc, char *argv[], char *envp[])
 {
-   pid_t pid;   // pid of child process
-   int stat;    // return status of child
+	pid_t pid;   // pid of child process
+	int stat;    // return status of child
    char **path; // array of directory names
-   int cmdNo;   // command number
+	int cmdNo;   // command number
    int i;       // generic index
 
    // set up command PATH from environment variable
@@ -69,15 +68,78 @@ int main(int argc, char *argv[], char *envp[])
 
    // initialise command history
    // - use content of ~/.mymysh_history file if it exists
-
-   cmdNo = initCommandHistory();
+	cmdNo = initCommandHistory();
+	
 
    // main loop: print prompt, read line, execute command
-
    char line[MAXLINE];
+	// TODO restore command history
    prompt();
    while (fgets(line, MAXLINE, stdin) != NULL) {
       trim(line); // remove leading/trailing space
+		// DONE if empty command, ignore
+		if (strcmp(line, "") == 0) { prompt(); continue; }
+		if (strcmp(line, "exit") == 0) break;
+
+		// TODO handle ! history substitution 
+		// DONE tokenise
+		char **args;
+		args = tokenise(line, " ");
+
+		addToCommandHistory(line, cmdNo);
+		cmdNo++;
+	
+		// TODO handle *?[~ filename expansion
+		// DONE handle shell built-ins
+		if (strcmp(line, "h") == 0 || strcmp(line, "history") == 0) {
+			// display last 20 commands with their sequence numbers
+			
+			// test file doesn't do anything
+			FILE *f = fopen("test_file", "w");
+			showCommandHistory(f);
+			fclose(f);
+			prompt();
+			continue;
+		}
+
+		if (strcmp(line, "pwd") == 0) {
+			char buf[MAXLINE];
+			printf ("%s\n", getcwd(buf,sizeof(buf)));
+			prompt();
+			continue;
+		}
+		
+		if (strcmp(args[0], "cd") == 0) {
+			chdir(args[1]);
+			prompt();
+			continue;
+		}
+
+		// TODO check for input/output redirections
+		// - how does stat/WEXITSTATUS work?
+
+		if ((pid = fork() != 0)) {
+			wait(&stat);
+
+			if (findExecutable(*args, path) != NULL) {
+				printf ("--------------------\n");
+				printf ("Returns %d\n", WEXITSTATUS(stat));	
+			}
+
+			freeTokens(args);
+			prompt();
+		} else {
+			char *exec;
+			if ((exec = findExecutable(*args, path)) == NULL) {
+				printf ("Command not found\n");
+			} else {
+				printf ("Running %s\n", exec);
+				printf ("--------------------\n");
+				execve(exec, args, envp);
+			}
+			// stat = 0;
+			return stat;
+		}
 
       // TODO
       // Code to implement mainloop goes here
@@ -86,8 +148,6 @@ int main(int argc, char *argv[], char *envp[])
       // - showCommandHistory()
       // - and many other functions
       // TODO
-
-      prompt();
    }
    saveCommandHistory();
    cleanCommandHistory();
@@ -97,10 +157,10 @@ int main(int argc, char *argv[], char *envp[])
 
 // fileNameExpand: expand any wildcards in command-line args
 // - returns a possibly larger set of tokens
-char **fileNameExpand(char **tokens)
-{
-   // TODO
-}
+// char **fileNameExpand(char **tokens)
+// {
+//    // TODO
+// }
 
 // findExecutable: look for executable in PATH
 char *findExecutable(char *cmd, char **path)

@@ -4,6 +4,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <ctype.h>
+#include <assert.h>
+
 #include "history.h"
 
 // This is defined in string.h
@@ -18,6 +22,11 @@
 #define MAXSTR  200
 
 #define HISTFILE ".mymysh_history"
+
+#define FALSE 0
+#define TRUE 1
+
+void moveEverythingUp(void);
 
 typedef struct _history_entry {
    int   seqNumber;
@@ -34,10 +43,42 @@ HistoryList CommandHistory;
 // initCommandHistory()
 // - initialise the data structure
 // - read from .history if it exists
+// - returns next cmdNo
 
 int initCommandHistory()
 {
-   // TODO
+	// TODO
+	int i = 0;
+	FILE *f = fopen(HISTFILE, "r");
+
+	// if file exists => return true
+	if (f != NULL) {
+		char buf[MAXSTR];
+		int seqNo;
+		while (fgets(buf, sizeof(buf), f) != NULL) {
+			buf[strlen(buf)-1] = '\0';
+
+			char *string = malloc(MAXSTR);
+			sscanf(buf, " %3d  %s\n", &seqNo, string);
+			
+			CommandHistory.commands[i].seqNumber = seqNo;		
+			CommandHistory.commands[i].commandLine = strdup(string);
+			CommandHistory.nEntries++;
+			
+			free(string);
+			i++;
+		}
+		seqNo++;
+		fclose(f);
+		return seqNo;
+	} else {
+		for (int i = 0; i < MAXHIST; i++) {
+			CommandHistory.commands[i].commandLine = NULL;
+		}
+	}
+	
+	fclose(f);
+	return 1; 	// return 1 if no file found
 }
 
 // addToCommandHistory()
@@ -46,7 +87,29 @@ int initCommandHistory()
 
 void addToCommandHistory(char *cmdLine, int seqNo)
 {
-   // TODO
+   // TODO, criteria for adding
+
+	if (seqNo-1 >= MAXHIST) {
+		moveEverythingUp();
+		CommandHistory.commands[MAXHIST-1].seqNumber = seqNo;
+		CommandHistory.commands[MAXHIST-1].commandLine = strdup(cmdLine);
+	} else {
+		CommandHistory.commands[seqNo-1].seqNumber = seqNo;
+		CommandHistory.commands[seqNo-1].commandLine = strdup(cmdLine);
+		CommandHistory.nEntries++;
+	}
+}
+
+// moveEverythingUp()
+// - moves everything up
+// - need to free the first one
+void moveEverythingUp(void) {
+	for (int i = 0; i < MAXHIST; i++) {
+		CommandHistory.commands[i].seqNumber = 
+			CommandHistory.commands[i+1].seqNumber;
+		CommandHistory.commands[i].commandLine = 
+			CommandHistory.commands[i+1].commandLine;
+	}
 }
 
 // showCommandHistory()
@@ -54,7 +117,11 @@ void addToCommandHistory(char *cmdLine, int seqNo)
 
 void showCommandHistory(FILE *outf)
 {
-   // TODO
+   // TODO - currently writes to STDOUT, not a file
+	for (int i = 0; i < CommandHistory.nEntries; i++) {
+		printf (" %3d  ", CommandHistory.commands[i].seqNumber);
+		printf ("%s\n", CommandHistory.commands[i].commandLine);
+	}
 }
 
 // getCommandFromHistory()
@@ -63,7 +130,13 @@ void showCommandHistory(FILE *outf)
 
 char *getCommandFromHistory(int cmdNo)
 {
-   // TODO
+	// TODO
+	for (int i = 0; i < CommandHistory.nEntries; i++) {
+		if (cmdNo == CommandHistory.commands[i].seqNumber) {
+			return CommandHistory.commands[i].commandLine;
+		}
+	}
+	return NULL;
 }
 
 // saveCommandHistory()
@@ -71,7 +144,16 @@ char *getCommandFromHistory(int cmdNo)
 
 void saveCommandHistory()
 {
-   // TODO
+	FILE *f = fopen(HISTFILE, "w");
+
+	if (f != NULL) {
+		for (int i = 0; i < MAXHIST; i++) {
+			fprintf (f, " %3d  %s\n", CommandHistory.commands[i].seqNumber, 
+											  CommandHistory.commands[i].commandLine);
+		}
+	}
+
+	fclose(f);
 }
 
 // cleanCommandHistory
@@ -80,4 +162,10 @@ void saveCommandHistory()
 void cleanCommandHistory()
 {
    // TODO
+	for (int i = 0; i < CommandHistory.nEntries; i++) {
+		CommandHistory.commands[i].seqNumber = 0;
+		free(CommandHistory.commands[i].commandLine);
+		CommandHistory.commands[i].commandLine = NULL;
+	}
 }
+
