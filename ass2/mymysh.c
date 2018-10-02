@@ -98,6 +98,7 @@ int main(int argc, char *argv[], char *envp[])
 			FILE *f = fopen("test_file", "w");
 			showCommandHistory(f);
 			fclose(f);
+			freeTokens(args);
 			prompt();
 			continue;
 		}
@@ -105,12 +106,14 @@ int main(int argc, char *argv[], char *envp[])
 		if (strcmp(line, "pwd") == 0) {
 			char buf[MAXLINE];
 			printf ("%s\n", getcwd(buf,sizeof(buf)));
+			freeTokens(args);
 			prompt();
 			continue;
 		}
 		
 		if (strcmp(args[0], "cd") == 0) {
 			chdir(args[1]);
+			freeTokens(args);
 			prompt();
 			continue;
 		}
