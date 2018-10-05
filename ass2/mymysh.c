@@ -81,7 +81,36 @@ int main(int argc, char *argv[], char *envp[])
 		if (strcmp(line, "") == 0) { prompt(); continue; }
 		if (strcmp(line, "exit") == 0) break;
 
-		// TODO handle ! history substitution 
+		// DONE handle ! history substitution 
+		if (line[0] == '!') {
+			if (line[1] == '!') {
+				strcpy(line, getCommandFromHistory(cmdNo-1));
+				trim(line);
+				printf ("%s\n", line);
+			} else {
+				char num_c[MAXLINE];
+				for (int i = 0; line[i] != '\0'; i++)
+					num_c[i] = line[i+1];
+
+				int num_i = atoi(num_c);
+				if (num_i <= 0) {
+					printf ("Invalid history substitution\n");
+					prompt();
+					continue;
+				}
+
+				if (getCommandFromHistory(num_i) == NULL) {
+					printf ("No command #%d\n", num_i);
+					prompt();
+					continue;
+				} else {
+					strcpy(line, getCommandFromHistory(num_i));
+					trim(line);
+					printf ("%s\n", line);
+				}
+			}
+		}
+
 		// DONE tokenise
 		char **args;
 		args = tokenise(line, " ");
@@ -91,6 +120,7 @@ int main(int argc, char *argv[], char *envp[])
 	
 		// TODO handle *?[~ filename expansion
 		// DONE handle shell built-ins
+
 		if (strcmp(line, "h") == 0 || strcmp(line, "history") == 0) {
 			// display last 20 commands with their sequence numbers
 			
@@ -112,7 +142,19 @@ int main(int argc, char *argv[], char *envp[])
 		}
 		
 		if (strcmp(args[0], "cd") == 0) {
-			chdir(args[1]);
+			if (args[1] == '\0') {
+				chdir(getenv("HOME"));
+				char buf[MAXLINE];
+				printf ("%s\n", getcwd(buf, sizeof(buf)));
+
+			} else {
+				if (chdir(args[1]) == 0) {
+					char buf[MAXLINE];
+					printf ("%s\n", getcwd(buf, sizeof(buf)));
+				} else {
+					printf ("%s: No such file or directory\n", args[1]);
+				}
+			}
 			freeTokens(args);
 			prompt();
 			continue;
@@ -164,6 +206,8 @@ int main(int argc, char *argv[], char *envp[])
 // {
 //    // TODO
 // }
+
+
 
 // findExecutable: look for executable in PATH
 char *findExecutable(char *cmd, char **path)

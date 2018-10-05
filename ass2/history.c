@@ -146,7 +146,7 @@ void saveCommandHistory()
 	FILE *f = fopen(HISTFILE, "w");
 
 	if (f != NULL) {
-		for (int i = 0; i < MAXHIST; i++) {
+		for (int i = 0; i < CommandHistory.nEntries; i++) {
 			fprintf (f, " %3d  %s\n", CommandHistory.commands[i].seqNumber, 
 											  CommandHistory.commands[i].commandLine);
 		}
