@@ -119,6 +119,9 @@ int main(int argc, char *argv[], char *envp[])
 		cmdNo++;
 	
 		// TODO handle *?[~ filename expansion
+
+
+
 		// DONE handle shell built-ins
 
 		if (strcmp(line, "h") == 0 || strcmp(line, "history") == 0) {
@@ -178,10 +181,12 @@ int main(int argc, char *argv[], char *envp[])
 			if ((exec = findExecutable(*args, path)) == NULL) {
 				printf ("Command not found\n");
 			} else {
+				printf ("hello\n");
 				printf ("Running %s\n", exec);
 				printf ("--------------------\n");
 				execve(exec, args, envp);
 			}
+			printf ("%s\n", exec);
 			// stat = 0;
 			return stat;
 		}
