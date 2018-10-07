@@ -123,66 +123,72 @@ int main(int argc, char *argv[], char *envp[])
 		}
 
 		// DONE check for input/output redirections
-		int file_exists = TRUE;
-		for (int i = 0; args[i] != NULL; i++) {
-			// output
-			if (strcmp(args[i], ">") == 0) {
-				if (args[i+1] == NULL) {
-					printf ("Invalid i/o redirection\n");
-					file_exists = FALSE;
-					break;
-				}
+		int last_token = 0;
+		while (args[last_token] != NULL) {
+			last_token++;
+		}
+		last_token--;
 
-				char *output = strdup(args[i+1]);
+		// int valid = TRUE;
 
-				FILE *f = fopen(output, "w");
+		if (strchr(line, '>') != NULL) {
+			if (strcmp(args[last_token-1], ">") != 0) {
+				printf ("Invalid i/o redirection\n");
+				freeTokens(args);
+				prompt();
+				continue;
+
+			}
+
+			char *output = strdup(args[last_token]);
+			FILE *f = fopen(output, "w");
+			if (f == NULL) {
+				printf ("Output redirection: Permission denied\n");
+				free(output);
+				freeTokens(args);
+				prompt();
+				continue;
+
+			} else {
+				fclose(f);
+			}
+			free(output);
+		}
+
+		if (strchr(line, '<') != NULL) {
+			if (strcmp(args[last_token-1], "<") != 0) {
+				printf ("Invalid i/o redirection\n");
+				freeTokens(args);
+				prompt();
+				continue;
+
+			}
+
+			char *input = strdup(args[last_token]);
+
+			// check if file name exists in directory
+			struct stat buffer;
+			if (stat(input, &buffer) == -1) {
+				printf ("Input redirection: No such file or directory\n");
+				free(input);
+				prompt();
+				continue;
+
+			} else {
+				// if input file is readable
+				FILE *f = fopen(input, "r");
 				if (f == NULL) {
-					printf ("Output redirection: Permission denied\n");
-					free(output);
-					file_exists = FALSE;
-					break;
+					printf ("Input redirection: Permission denied\n");
+					free(input);
+					freeTokens(args);
+					prompt();
+					continue;
 				} else {
 					fclose(f);
 				}
-				free(output);
-			}
+			} 
+			free(input);
 
-			// input
-			if (strcmp(args[i], "<") == 0) {
-				if (args[i+1] == NULL) {
-					printf ("Invalid i/o redirection\n");
-					file_exists = FALSE;
-					break;
-				}
-				char *input = strdup(args[i+1]);
-
-				// check if file name exists in directory
-				struct stat buffer;
-				if (stat(input, &buffer) == -1) {
-					printf ("Input redirection: No such file or directory\n");
-					free(input);
-					file_exists = FALSE;
-					break;
-				} else {
-					// if input file is readable
-					FILE *f = fopen(input, "r");
-					if (f == NULL) {
-						printf ("Input redirection: Permission denied\n");
-						free(input);
-						file_exists = FALSE;
-						break;
-					} else {
-						fclose(f);
-					}
-				} 
-				free(input);
-			}
-		}
-
-		if (file_exists == FALSE) {
-			freeTokens(args);
-			prompt();
-			continue;
 		}
 
 		// DONE add to command history
