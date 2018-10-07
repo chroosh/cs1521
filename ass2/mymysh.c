@@ -1,6 +1,6 @@
 // mysh.c ... a small shell
 // Started by John Shepherd, September 2018
-// Completed by <<YOU>>, September/October 2018
+// Completed by Christopher Shi <z5165244>, September/October 2018
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -112,7 +112,6 @@ int main(int argc, char *argv[], char *envp[])
 			}
 		}
 		
-		
 		// DONE tokenise
 		char **args;
 		args = tokenise(line, " ");
@@ -129,6 +128,7 @@ int main(int argc, char *argv[], char *envp[])
 		}
 		last_token--;
 
+		// if line contains both '>' and '<', invalid i/o
 		if (strchr(line, '>') != NULL && strchr(line, '<') != NULL) {
 			printf ("Invalid i/o redirection\n");
 			freeTokens(args);
@@ -136,15 +136,17 @@ int main(int argc, char *argv[], char *envp[])
 			continue;
 		}
 
+		// if line contains '>'
 		if (strchr(line, '>') != NULL) {
+			// if second last arg is not ">" invalid i/o
 			if (strcmp(args[last_token-1], ">") != 0) {
 				printf ("Invalid i/o redirection\n");
 				freeTokens(args);
 				prompt();
 				continue;
-
 			}
 
+			// if last token is unwritable, permission denied
 			char *output = strdup(args[last_token]);
 			FILE *f = fopen(output, "w");
 			if (f == NULL) {
@@ -153,34 +155,32 @@ int main(int argc, char *argv[], char *envp[])
 				freeTokens(args);
 				prompt();
 				continue;
-
 			} else {
 				fclose(f);
 			}
 			free(output);
 		}
 
+		// if line contains '<'
 		if (strchr(line, '<') != NULL) {
+			// if second last arg is not "<", invalid i/o
 			if (strcmp(args[last_token-1], "<") != 0) {
 				printf ("Invalid i/o redirection\n");
 				freeTokens(args);
 				prompt();
 				continue;
-
 			}
 
 			char *input = strdup(args[last_token]);
-
-			// check if file name exists in directory
+			// if last token does not exist in directory
 			struct stat buffer;
 			if (stat(input, &buffer) == -1) {
 				printf ("Input redirection: No such file or directory\n");
 				free(input);
 				prompt();
 				continue;
-
 			} else {
-				// if input file is readable
+				// if last token is unreadable
 				FILE *f = fopen(input, "r");
 				if (f == NULL) {
 					printf ("Input redirection: Permission denied\n");
@@ -193,7 +193,6 @@ int main(int argc, char *argv[], char *envp[])
 				}
 			} 
 			free(input);
-
 		}
 
 		// DONE add to command history
@@ -202,9 +201,6 @@ int main(int argc, char *argv[], char *envp[])
 			cmdNo++;
 		}
 			
-		// old filename expansion
-		
-
 		// DONE handle shell built-ins
 		if (strcmp(line, "h") == 0 || strcmp(line, "history") == 0) {
 			showCommandHistory();
@@ -224,16 +220,19 @@ int main(int argc, char *argv[], char *envp[])
 		}
 		
 		if (strcmp(args[0], "cd") == 0) {
+			// if line = "cd"
 			if (args[1] == '\0') {
 				chdir(getenv("HOME"));
 				char buf[MAXLINE];
 				printf ("%s\n", getcwd(buf, sizeof(buf)));
 
 			} else {
+				// change to dir
 				if (chdir(args[1]) == 0) {
 					char buf[MAXLINE];
 					printf ("%s\n", getcwd(buf, sizeof(buf)));
 				} else {
+					// if chdir failed - no directory under args[1] exists
 					printf ("%s: No such file or directory\n", args[1]);
 				}
 			}
@@ -245,6 +244,7 @@ int main(int argc, char *argv[], char *envp[])
 
 		// DONE run the command
 		if ((pid = fork() != 0)) {
+			// parent waits
 			wait(&status);
 
 			if (findExecutable(*args, path) != NULL) {
@@ -255,6 +255,7 @@ int main(int argc, char *argv[], char *envp[])
 			freeTokens(args);
 			prompt();
 		} else {
+			// child executes
 			char *exec;
 			if ((exec = findExecutable(*args, path)) == NULL) {
 				printf ("%s: Command not found\n", line);
@@ -312,7 +313,6 @@ int main(int argc, char *argv[], char *envp[])
 // - returns a possibly larger set of tokens
 char **fileNameExpand(char **tokens)
 {
-	// TODO
 	int wildcard_found = FALSE;
 	glob_t results;
 	

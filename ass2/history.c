@@ -47,7 +47,8 @@ HistoryList CommandHistory;
 
 int initCommandHistory()
 {
-	// TODO
+	// DONE
+	// finding $HOME path
 	char location[MAXSTR];
 	strcpy(location, getenv("HOME"));
 	strcat(location, "/");
@@ -56,7 +57,7 @@ int initCommandHistory()
 	FILE *f = fopen(location, "r");
 
 	int i = 0;
-	// if file exists => return true
+	// if file exists
 	if (f != NULL) {
 		char buf[MAXSTR];
 		int seqNo;
@@ -65,7 +66,6 @@ int initCommandHistory()
 
 			char *string = malloc(MAXSTR);
 			sscanf(buf, " %3d  %[^\n]\n", &seqNo, string);
-
 			
 			CommandHistory.commands[i].seqNumber = seqNo;		
 			CommandHistory.commands[i].commandLine = strdup(string);
@@ -76,24 +76,24 @@ int initCommandHistory()
 		}
 		seqNo++;
 		fclose(f);
-		return seqNo;
+		return seqNo; 		// returns largest seqNo detected from file
 	} else {
+		// initiates to NULL
 		for (int i = 0; i < MAXHIST; i++) {
 			CommandHistory.commands[i].commandLine = NULL;
 		}
 	}
 	
-	return 1; 	// return 1 if no file found
+	return 1; 				// return 1 if no file found
 }
 
 // addToCommandHistory()
 // - add a command line to the history list
 // - overwrite oldest entry if buffer is full
+// - criteria for adding is managed in mymysh.c
 
 void addToCommandHistory(char *cmdLine, int seqNo)
 {
-   // TODO, criteria for adding
-
 	if (seqNo-1 >= MAXHIST) {
 		moveEverythingUp();
 		CommandHistory.commands[MAXHIST-1].seqNumber = seqNo;
@@ -118,7 +118,8 @@ void moveEverythingUp(void) {
 }
 
 // showCommandHistory()
-// - display the list of 
+// - display the list of (details in the data structure to STDOUT)
+// - arguments have been modified, no longer accepts file pointer
 
 void showCommandHistory(void)
 {
@@ -135,7 +136,7 @@ void showCommandHistory(void)
 
 char *getCommandFromHistory(int cmdNo)
 {
-	// TODO
+	// DONE - search for command in data structure
 	for (int i = 0; i < CommandHistory.nEntries; i++) {
 		if (cmdNo == CommandHistory.commands[i].seqNumber) {
 			return CommandHistory.commands[i].commandLine;
@@ -149,13 +150,14 @@ char *getCommandFromHistory(int cmdNo)
 
 void saveCommandHistory()
 {
+	// finding $HOME path
 	char location[MAXSTR];
 	strcpy(location, getenv("HOME"));
 	strcat(location, "/");
 	strcat(location, HISTFILE);
 
+	// copying all data from data structure into file
 	FILE *f = fopen(location, "w");
-
 	if (f != NULL) {
 		for (int i = 0; i < CommandHistory.nEntries; i++) {
 			fprintf (f, " %3d  %s\n", CommandHistory.commands[i].seqNumber, 
@@ -163,7 +165,6 @@ void saveCommandHistory()
 		}
 		fclose(f);
 	}
-
 }
 
 // cleanCommandHistory
@@ -171,7 +172,7 @@ void saveCommandHistory()
 
 void cleanCommandHistory()
 {
-   // TODO
+   // DONE
 	for (int i = 0; i < CommandHistory.nEntries; i++) {
 		CommandHistory.commands[i].seqNumber = 0;
 		free(CommandHistory.commands[i].commandLine);
