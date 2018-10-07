@@ -59,7 +59,8 @@ int initCommandHistory()
 			buf[strlen(buf)-1] = '\0';
 
 			char *string = malloc(MAXSTR);
-			sscanf(buf, " %3d  %s\n", &seqNo, string);
+			sscanf(buf, " %3d  %[^\n]\n", &seqNo, string);
+
 			
 			CommandHistory.commands[i].seqNumber = seqNo;		
 			CommandHistory.commands[i].commandLine = strdup(string);

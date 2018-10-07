@@ -34,6 +34,8 @@ void prompt(void);
 // Global Constants
 
 #define MAXLINE 200
+#define FALSE 0
+#define TRUE 1
 
 // Global Data
 
@@ -47,7 +49,7 @@ void prompt(void);
 int main(int argc, char *argv[], char *envp[])
 {
 	pid_t pid;   // pid of child process
-	int stat;    // return status of child
+	int status;    // return status of child
    char **path; // array of directory names
 	int cmdNo;   // command number
    int i;       // generic index
@@ -73,7 +75,6 @@ int main(int argc, char *argv[], char *envp[])
 
    // main loop: print prompt, read line, execute command
    char line[MAXLINE];
-	// TODO restore command history
    prompt();
    while (fgets(line, MAXLINE, stdin) != NULL) {
       trim(line); // remove leading/trailing space
@@ -93,7 +94,7 @@ int main(int argc, char *argv[], char *envp[])
 					num_c[i] = line[i+1];
 
 				int num_i = atoi(num_c);
-				if (num_i <= 0) {
+				if (num_i <= 0 || isdigit(line[1]) == FALSE) {
 					printf ("Invalid history substitution\n");
 					prompt();
 					continue;
@@ -110,20 +111,74 @@ int main(int argc, char *argv[], char *envp[])
 				}
 			}
 		}
-
+		
+		
 		// DONE tokenise
 		char **args;
 		args = tokenise(line, " ");
 
+		// DONE check for input/output redirections
+		int file_exists = TRUE;
+		for (int i = 0; args[i] != NULL; i++) {
+			// output
+			if (strcmp(args[i], ">") == 0) {
+				char *output = strdup(args[i+1]);
+
+				FILE *f = fopen(output, "w");
+				if (f == NULL) {
+					printf ("Output redirection: Permission denied\n");
+					free(output);
+					file_exists = FALSE;
+					break;
+				} else {
+					fclose(f);
+				}
+				free(output);
+			}
+
+			// input
+			if (strcmp(args[i], "<") == 0) {
+				char *input = strdup(args[i+1]);
+
+				// check if file name exists in directory
+				struct stat buffer;
+				if (stat(input, &buffer) == -1) {
+					printf ("Input redirection: No such file or directory\n");
+					free(input);
+					file_exists = FALSE;
+					break;
+				} else {
+					// if input file is readable
+					FILE *f = fopen(input, "r");
+					if (f == NULL) {
+						printf ("Input redirection: Permission denied\n");
+						free(input);
+						file_exists = FALSE;
+						break;
+					} else {
+						fclose(f);
+					}
+				} 
+				free(input);
+			}
+		}
+
+		if (file_exists == FALSE) {
+			freeTokens(args);
+			prompt();
+			continue;
+		}
+
+		// DONE add to command history
 		addToCommandHistory(line, cmdNo);
 		cmdNo++;
 	
-		// TODO handle *?[~ filename expansion
-
-
+		// DONE handle *?[~ filename expansion
+		if (fileNameExpand(args) != NULL) {
+			args = fileNameExpand(args);
+		}
 
 		// DONE handle shell built-ins
-
 		if (strcmp(line, "h") == 0 || strcmp(line, "history") == 0) {
 			// display last 20 commands with their sequence numbers
 			
@@ -163,15 +218,14 @@ int main(int argc, char *argv[], char *envp[])
 			continue;
 		}
 
-		// TODO check for input/output redirections
-		// - how does stat/WEXITSTATUS work?
 
+		// DONE run the command
 		if ((pid = fork() != 0)) {
-			wait(&stat);
+			wait(&status);
 
 			if (findExecutable(*args, path) != NULL) {
 				printf ("--------------------\n");
-				printf ("Returns %d\n", WEXITSTATUS(stat));	
+				printf ("Returns %d\n", WEXITSTATUS(status));	
 			}
 
 			freeTokens(args);
@@ -181,23 +235,16 @@ int main(int argc, char *argv[], char *envp[])
 			if ((exec = findExecutable(*args, path)) == NULL) {
 				printf ("Command not found\n");
 			} else {
-				printf ("hello\n");
-				printf ("Running %s\n", exec);
+				// TODO sort out any redirections
+				printf ("Running %s ...\n", exec);
 				printf ("--------------------\n");
-				execve(exec, args, envp);
+				if (execve(exec, args, envp) == -1) {
+					printf ("%s: unknown type of executable\n", exec);
+					return -1;
+				}
 			}
-			printf ("%s\n", exec);
-			// stat = 0;
-			return stat;
+			return status;
 		}
-
-      // TODO
-      // Code to implement mainloop goes here
-      // Uses
-      // - addToCommandHistory()
-      // - showCommandHistory()
-      // - and many other functions
-      // TODO
    }
    saveCommandHistory();
    cleanCommandHistory();
@@ -207,12 +254,48 @@ int main(int argc, char *argv[], char *envp[])
 
 // fileNameExpand: expand any wildcards in command-line args
 // - returns a possibly larger set of tokens
-// char **fileNameExpand(char **tokens)
-// {
-//    // TODO
-// }
+char **fileNameExpand(char **tokens)
+{
+	// TODO
+	int wildcard_found = FALSE;
+	glob_t results;
+	
+	char string[MAXLINE];
+	string[0] = '\0';
 
+	for (int i = 0; tokens[i] != NULL; i++) {
+		if (strchr(tokens[i], '*') != NULL || strchr(tokens[i], '?') != NULL ||
+			 strchr(tokens[i], '[') != NULL || strchr(tokens[i], '~') != NULL) {
 
+			wildcard_found = TRUE;
+			glob(tokens[i], GLOB_NOCHECK|GLOB_TILDE, 0, &results);
+
+			// greater than or equal to 1
+			if (results.gl_pathc >= 1 && strcmp(results.gl_pathv[0], tokens[i]) != 0) {
+				for (int i = 0; i < results.gl_pathc; i++) {
+					strcat(string, results.gl_pathv[i]);
+					strcat(string, " ");
+				}
+		   // less than 1 (0)
+			} else {
+				continue;
+			}
+			globfree(&results);
+		} else {
+			strcat(string, tokens[i]);
+			strcat(string, " ");
+		}
+	}
+
+	if (wildcard_found == TRUE) {
+		trim(string);
+		char **new_tokens;
+		new_tokens = tokenise(string, " ");
+		return new_tokens;
+	} else {
+		return NULL;
+	}
+}
 
 // findExecutable: look for executable in PATH
 char *findExecutable(char *cmd, char **path)
