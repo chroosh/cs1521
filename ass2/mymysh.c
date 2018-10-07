@@ -225,12 +225,16 @@ int main(int argc, char *argv[], char *envp[])
 				chdir(getenv("HOME"));
 				char buf[MAXLINE];
 				printf ("%s\n", getcwd(buf, sizeof(buf)));
+				addToCommandHistory(line, cmdNo);
+				cmdNo++;
 
 			} else {
 				// change to dir
 				if (chdir(args[1]) == 0) {
 					char buf[MAXLINE];
 					printf ("%s\n", getcwd(buf, sizeof(buf)));
+					addToCommandHistory(line, cmdNo);
+					cmdNo++;
 				} else {
 					// if chdir failed - no directory under args[1] exists
 					printf ("%s: No such file or directory\n", args[1]);
