@@ -117,6 +117,11 @@ int main(int argc, char *argv[], char *envp[])
 		char **args;
 		args = tokenise(line, " ");
 
+		// DONE handle *?[~ filename expansion
+		if (line[0] != '?' && fileNameExpand(args) != NULL) {
+			args = fileNameExpand(args);
+		}
+
 		// DONE check for input/output redirections
 		int file_exists = TRUE;
 		for (int i = 0; args[i] != NULL; i++) {
@@ -186,10 +191,8 @@ int main(int argc, char *argv[], char *envp[])
 			cmdNo++;
 		}
 			
-		// DONE handle *?[~ filename expansion
-		if (line[0] != '?' && fileNameExpand(args) != NULL) {
-			args = fileNameExpand(args);
-		}
+		// old filename expansion
+		
 
 		// DONE handle shell built-ins
 		if (strcmp(line, "h") == 0 || strcmp(line, "history") == 0) {
