@@ -196,7 +196,8 @@ int main(int argc, char *argv[], char *envp[])
 		}
 
 		// DONE add to command history
-		if (findExecutable(*args, path) != NULL) {
+		if (findExecutable(*args, path) != NULL && strcmp(line, "pwd") != 0
+				&& strcmp(args[0], "cd") != 0) {
 			addToCommandHistory(line, cmdNo);
 			cmdNo++;
 		}
@@ -214,6 +215,9 @@ int main(int argc, char *argv[], char *envp[])
 		if (strcmp(line, "pwd") == 0) {
 			char buf[MAXLINE];
 			printf ("%s\n", getcwd(buf,sizeof(buf)));
+			addToCommandHistory(line, cmdNo);
+			cmdNo++;
+
 			freeTokens(args);
 			prompt();
 			continue;
