@@ -7,7 +7,7 @@
 
 int initCommandHistory();
 void addToCommandHistory(char *cmdLine, int seqNo);
-void showCommandHistory(FILE *histFile);
+void showCommandHistory();
 char *getCommandFromHistory(int cmdNo);
 void saveCommandHistory();
 void cleanCommandHistory();

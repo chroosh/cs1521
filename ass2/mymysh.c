@@ -122,6 +122,12 @@ int main(int argc, char *argv[], char *envp[])
 		for (int i = 0; args[i] != NULL; i++) {
 			// output
 			if (strcmp(args[i], ">") == 0) {
+				if (args[i+1] == NULL) {
+					printf ("Invalid i/o redirection\n");
+					file_exists = FALSE;
+					break;
+				}
+
 				char *output = strdup(args[i+1]);
 
 				FILE *f = fopen(output, "w");
@@ -138,6 +144,11 @@ int main(int argc, char *argv[], char *envp[])
 
 			// input
 			if (strcmp(args[i], "<") == 0) {
+				if (args[i+1] == NULL) {
+					printf ("Invalid i/o redirection\n");
+					file_exists = FALSE;
+					break;
+				}
 				char *input = strdup(args[i+1]);
 
 				// check if file name exists in directory
@@ -170,22 +181,21 @@ int main(int argc, char *argv[], char *envp[])
 		}
 
 		// DONE add to command history
-		addToCommandHistory(line, cmdNo);
-		cmdNo++;
-	
+		if (findExecutable(*args, path) != NULL) {
+			addToCommandHistory(line, cmdNo);
+			cmdNo++;
+		}
+			
 		// DONE handle *?[~ filename expansion
-		if (fileNameExpand(args) != NULL) {
+		if (line[0] != '?' && fileNameExpand(args) != NULL) {
 			args = fileNameExpand(args);
 		}
 
 		// DONE handle shell built-ins
 		if (strcmp(line, "h") == 0 || strcmp(line, "history") == 0) {
-			// display last 20 commands with their sequence numbers
-			
-			// test file doesn't do anything
-			FILE *f = fopen("test_file", "w");
-			showCommandHistory(f);
-			fclose(f);
+			showCommandHistory();
+			addToCommandHistory(line, cmdNo);
+			cmdNo++;
 			freeTokens(args);
 			prompt();
 			continue;
@@ -233,11 +243,43 @@ int main(int argc, char *argv[], char *envp[])
 		} else {
 			char *exec;
 			if ((exec = findExecutable(*args, path)) == NULL) {
-				printf ("Command not found\n");
+				printf ("%s: Command not found\n", line);
 			} else {
 				// TODO sort out any redirections
 				printf ("Running %s ...\n", exec);
 				printf ("--------------------\n");
+
+				int f;
+				for (int i = 0; args[i] != NULL; i++) {
+					// redirect to output
+					if (strcmp(args[i], ">") == 0) {
+						f = open(args[i+1], O_WRONLY | O_CREAT);
+						dup2(f, 1);
+						free(args[i]); args[i] = NULL;
+						free(args[i+1]); args[i+1] = NULL;
+
+						if (execve(exec, args, envp) == -1) {
+							printf ("%s: unknown type of executable\n", exec);
+							return -1;
+						}
+						return status;
+					}
+					
+					// redirect to input
+					if (strcmp(args[i], "<") == 0) {
+						f = open(args[i+1], O_RDONLY);
+						dup2(f, 0);
+						free(args[i]); args[i] = NULL;
+						free(args[i+1]); args[i+1] = NULL;
+
+						if (execve(exec, args, envp) == -1) {
+							printf ("%s: unknown type of executable\n", exec);
+							return -1;
+						}
+						return status;
+					}
+				}
+
 				if (execve(exec, args, envp) == -1) {
 					printf ("%s: unknown type of executable\n", exec);
 					return -1;

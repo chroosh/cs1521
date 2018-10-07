@@ -48,9 +48,14 @@ HistoryList CommandHistory;
 int initCommandHistory()
 {
 	// TODO
-	int i = 0;
-	FILE *f = fopen(HISTFILE, "r");
+	char location[MAXSTR];
+	strcpy(location, getenv("HOME"));
+	strcat(location, "/");
+	strcat(location, HISTFILE);
 
+	FILE *f = fopen(location, "r");
+
+	int i = 0;
 	// if file exists => return true
 	if (f != NULL) {
 		char buf[MAXSTR];
@@ -115,7 +120,7 @@ void moveEverythingUp(void) {
 // showCommandHistory()
 // - display the list of 
 
-void showCommandHistory(FILE *outf)
+void showCommandHistory(void)
 {
    // TODO - currently writes to STDOUT, not a file
 	for (int i = 0; i < CommandHistory.nEntries; i++) {
@@ -144,7 +149,12 @@ char *getCommandFromHistory(int cmdNo)
 
 void saveCommandHistory()
 {
-	FILE *f = fopen(HISTFILE, "w");
+	char location[MAXSTR];
+	strcpy(location, getenv("HOME"));
+	strcat(location, "/");
+	strcat(location, HISTFILE);
+
+	FILE *f = fopen(location, "w");
 
 	if (f != NULL) {
 		for (int i = 0; i < CommandHistory.nEntries; i++) {
