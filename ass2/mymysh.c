@@ -129,7 +129,12 @@ int main(int argc, char *argv[], char *envp[])
 		}
 		last_token--;
 
-		// int valid = TRUE;
+		if (strchr(line, '>') != NULL && strchr(line, '<') != NULL) {
+			printf ("Invalid i/o redirection\n");
+			freeTokens(args);
+			prompt();
+			continue;
+		}
 
 		if (strchr(line, '>') != NULL) {
 			if (strcmp(args[last_token-1], ">") != 0) {
