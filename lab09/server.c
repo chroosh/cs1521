@@ -71,18 +71,71 @@ void send_500(int fd)
 void send_root(int fd)
 {
    // TODO
+	send_response(fd, "HTTP/1.1 200 OK",
+                     "text/html",
+                     "<h1>Server running ...</h1>");
 }
 
 // Send a /date endpoint response
 void send_date(int fd)
 {
    // TODO
+	char str_time[1024];
+   time_t cur_time;
+   cur_time = time(NULL);
+   strcpy(str_time, "<h1>");
+   strcat(str_time, asctime(localtime(&cur_time)));
+   strcat(str_time, "<h1>");
+   send_response(fd, "HTTP/1.1 200 OK",
+                     "text/html",
+                     str_time);
 }
 
 // Send a /date endpoint response
 void send_hello(int fd, char *req)
 {
    // TODO
+	char name[1017]; //variable /hello?[name]
+   char body[1032]; //<h1>Hello,[name]<h1>
+ 
+   if (strncmp(req, "/hello?", 7) == 0) {
+      if (sscanf(req, "/hello?%s", name) == 1) {
+         strcpy(body, "<h1>Hello, ");
+         strcat(body, name);
+         strcat(body, "!<h1>");
+         send_response(fd, "HTTP/1.1 200 OK",
+                           "text/html",
+                           body);
+      } else {
+         send_response(fd, "HTTP/1.1 200 OK",
+                           "text/html",
+                           "<h1>Name not found</h1>");
+      }
+   } else if (strcmp(req, "/hello") == 0) {
+      send_response(fd, "HTTP/1.1 200 OK",
+                        "text/html",
+                        "<h1>Hello</h1>");
+   }
+
+}
+
+// sen
+void got_data(int fd, char *req) {
+   char msg[1045];
+   char data[1024];
+   char *substr = strstr(req, "data=");
+   if (substr != NULL) {
+      sscanf(substr, "data=%s", data);
+      strcpy(msg, "Thanks for the data: ");
+      strcat(msg, data);
+      send_response(fd, "HTTP/1.1 200 OK",
+                        "text/plain",
+                        msg);
+   } else {
+      send_response(fd, "HTTP/1.1 200 OK",
+                        "text/plain",
+                        "Paramaters: <data>");
+   }
 }
 
 // Handle HTTP request and send response
@@ -110,8 +163,27 @@ void handle_http_request(int fd)
    // If you can't decode the request, generate a 500 error response
    // Otherwise call appropriate handler function, based on path
    // Hint: use sscanf() and strcmp()
-
-   // TODO
+	
+	// TODO
+	if (sscanf(request, "%s %s %s", req_type, req_path, req_protocol) == 3) {
+      if (strcmp(req_type, "GET") == 0) {
+         if (strcmp(req_path, "/") == 0) {
+            send_root(fd);
+         } else if (strncmp(req_path, "/hello", 6) == 0) {
+            send_hello(fd, req_path);
+         } else if (strcmp(req_path, "/date") == 0) {
+            send_date(fd);
+         } else {
+            send_404(fd);
+         }
+      } else if (strcmp(req_type, "POST") == 0 || strcmp(req_type, "PUT") == 0) {
+         got_data(fd, request);
+      } else {
+         send_500(fd);
+      }
+   } else {
+      send_500(fd);
+   }
 }
 
 // fatal error handler
