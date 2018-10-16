@@ -71,6 +71,7 @@ void send_500(int fd)
 void send_root(int fd)
 {
    // TODO
+	// response = "Server running ..."
 	send_response(fd, "HTTP/1.1 200 OK",
                      "text/html",
                      "<h1>Server running ...</h1>");
@@ -119,8 +120,8 @@ void send_hello(int fd, char *req)
 
 }
 
-// sen
-void got_data(int fd, char *req) {
+// if "data" is present in req char
+void if_data(int fd, char *req) {
    char msg[1045];
    char data[1024];
    char *substr = strstr(req, "data=");
@@ -177,7 +178,7 @@ void handle_http_request(int fd)
             send_404(fd);
          }
       } else if (strcmp(req_type, "POST") == 0 || strcmp(req_type, "PUT") == 0) {
-         got_data(fd, request);
+         if_data(fd, request);
       } else {
          send_500(fd);
       }
