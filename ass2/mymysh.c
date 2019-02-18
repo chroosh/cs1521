@@ -224,8 +224,7 @@ int main(int argc, char *argv[], char *envp[])
 		}
 		
 		if (strcmp(args[0], "cd") == 0) {
-			// if line = "cd"
-			if (args[1] == '\0') {
+			// if line = "cd			if (args[1] == '\0') {
 				chdir(getenv("HOME"));
 				char buf[MAXLINE];
 				printf ("%s\n", getcwd(buf, sizeof(buf)));
