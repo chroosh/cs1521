@@ -18,7 +18,7 @@
 
 // this next line may not be needed on you machine
 // comment it out if it generates an error
-// extern char *strdup(char *);
+extern char *strdup(char *);
 
 void trim(char *);
 char **tokenise(char *, char *);
@@ -60,14 +60,17 @@ int main(int argc, char *argv[], char *envp[])
 		char **args;
 		args = tokenise(line, " ");
 
+        pid = fork();
+        if (pid < 0) {
+            perror()
+        }
+
 		if ((pid = fork()) != 0) {
-			wait(NULL);
+			wait(&stat);
 			freeTokens(args);
 	      printf("mysh$ ");
 		} else {
 			execute(args, path, envp);
-			stat = 0;
-			return stat;
 		}
 
      }
@@ -131,6 +134,7 @@ void execute(char **args, char **path, char **envp)
 		perror ("Exec failed");
 	}
 	
+    exit();
 	// exit child process
 	// printf ("execute completed\n");
 
